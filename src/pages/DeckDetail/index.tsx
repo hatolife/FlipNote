@@ -84,13 +84,14 @@ export default function DeckDetail() {
         if (existing) {
           await db.cards.update([deckName, item.front], {
             back: item.back,
+            pronunciation: item.pronunciation,
             correctCount: item.correctCount,
             incorrectCount: item.incorrectCount,
             lastStudiedAt: item.lastStudiedAt,
             updatedAt: now,
           })
         } else {
-          await addCard(deckName, item.front, item.back)
+          await addCard(deckName, item.front, item.back, item.pronunciation)
           if (item.correctCount || item.incorrectCount || item.lastStudiedAt) {
             await db.cards.update([deckName, item.front], {
               correctCount: item.correctCount,

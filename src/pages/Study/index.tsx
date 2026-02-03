@@ -17,6 +17,7 @@ function shuffle<T>(array: T[]): T[] {
 interface StudyResult {
   front: string
   back: string
+  pronunciation?: string
   result: 'correct' | 'incorrect'
 }
 
@@ -55,7 +56,7 @@ export default function Study() {
   const handleAnswer = useCallback(async (result: 'correct' | 'incorrect') => {
     if (!currentCard) return
     await recordAnswer(deckName, currentCard.front, result)
-    const newResults = [...results, { front: currentCard.front, back: currentCard.back, result }]
+    const newResults = [...results, { front: currentCard.front, back: currentCard.back, pronunciation: currentCard.pronunciation, result }]
     setResults(newResults)
 
     if (currentIndex + 1 >= cards.length) {
@@ -116,6 +117,9 @@ export default function Study() {
           </div>
           <div className={styles.cardBack}>
             <p className={styles.cardText}>{currentCard.back}</p>
+            {currentCard.pronunciation && (
+              <p className={styles.pronunciation}>{currentCard.pronunciation}</p>
+            )}
           </div>
         </div>
       </div>

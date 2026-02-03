@@ -73,6 +73,12 @@
   flex: 1;
 }
 
+.incorrectPronunciation {
+  display: block;
+  font-size: 0.85rem;
+  color: #999;
+}
+
 .actions {
   display: flex;
   flex-direction: column;

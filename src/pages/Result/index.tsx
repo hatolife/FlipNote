@@ -5,6 +5,7 @@ import styles from './Result.module.css'
 interface StudyResult {
   front: string
   back: string
+  pronunciation?: string
   result: 'correct' | 'incorrect'
 }
 
@@ -49,7 +50,12 @@ export default function Result() {
             {incorrectResults.map((r) => (
               <li key={r.front} className={styles.incorrectItem}>
                 <span className={styles.incorrectFront}>{r.front}</span>
-                <span className={styles.incorrectBack}>{r.back}</span>
+                <span className={styles.incorrectBack}>
+                  {r.back}
+                  {r.pronunciation && (
+                    <span className={styles.incorrectPronunciation}>{r.pronunciation}</span>
+                  )}
+                </span>
               </li>
             ))}
           </ul>
