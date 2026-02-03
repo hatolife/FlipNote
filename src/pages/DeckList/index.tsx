@@ -7,6 +7,7 @@ export default function DeckList() {
   const [decks, setDecks] = useState<DeckSummary[]>([])
   const [showForm, setShowForm] = useState(false)
   const [newName, setNewName] = useState('')
+  const [error, setError] = useState('')
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -22,10 +23,15 @@ export default function DeckList() {
     e.preventDefault()
     const name = newName.trim()
     if (!name) return
-    await createDeck(name)
-    setNewName('')
-    setShowForm(false)
-    navigate(`/v1/deck/${encodeURIComponent(name)}`)
+    setError('')
+    try {
+      await createDeck(name)
+      setNewName('')
+      setShowForm(false)
+      navigate(`/v1/deck/${encodeURIComponent(name)}`)
+    } catch {
+      setError(`デッキ「${name}」は既に存在します`)
+    }
   }
 
   function formatDate(timestamp: number | null): string {
@@ -62,11 +68,12 @@ export default function DeckList() {
           <input
             type="text"
             value={newName}
-            onChange={(e) => setNewName(e.target.value)}
+            onChange={(e) => { setNewName(e.target.value); setError('') }}
             placeholder="デッキ名"
             autoFocus
             className={styles.input}
           />
+          {error && <p className={styles.error}>{error}</p>}
           <div className={styles.formActions}>
             <button type="submit" className={styles.btnPrimary}>作成</button>
             <button type="button" onClick={() => setShowForm(false)} className={styles.btnSecondary}>キャンセル</button>

@@ -89,6 +89,12 @@
   gap: 0.5rem;
 }
 
+.cardCount {
+  color: #666;
+  font-size: 0.9rem;
+  margin: 0 0 0.75rem;
+}
+
 .actions {
   display: flex;
   gap: 0.5rem;

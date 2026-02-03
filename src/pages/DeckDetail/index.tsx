@@ -161,6 +161,8 @@ export default function DeckDetail() {
         </p>
       )}
 
+      <p className={styles.cardCount}>{cards.length}枚のカード</p>
+
       <div className={styles.actions}>
         <Link to={`/v1/deck/${encodeURIComponent(deckName)}/study`} className={styles.studyBtn}>
           学習を始める

@@ -12,6 +12,7 @@ export default function CardEdit() {
 
   const [front, setFront] = useState('')
   const [back, setBack] = useState('')
+  const [error, setError] = useState('')
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -30,16 +31,31 @@ export default function CardEdit() {
     const trimmedFront = front.trim()
     const trimmedBack = back.trim()
     if (!trimmedFront || !trimmedBack) return
+    setError('')
 
-    if (isNew) {
-      await addCard(deckName, trimmedFront, trimmedBack)
-    } else {
-      if (trimmedFront !== editingFront) {
-        await updateCardFront(deckName, editingFront!, trimmedFront)
+    try {
+      if (isNew) {
+        const existing = await db.cards.get([deckName, trimmedFront])
+        if (existing) {
+          setError(`「${trimmedFront}」は既に存在します`)
+          return
+        }
+        await addCard(deckName, trimmedFront, trimmedBack)
+      } else {
+        if (trimmedFront !== editingFront) {
+          const existing = await db.cards.get([deckName, trimmedFront])
+          if (existing) {
+            setError(`「${trimmedFront}」は既に存在します`)
+            return
+          }
+          await updateCardFront(deckName, editingFront!, trimmedFront)
+        }
+        await updateCard(deckName, trimmedFront, { back: trimmedBack })
       }
-      await updateCard(deckName, trimmedFront, { back: trimmedBack })
+      navigate(`/v1/deck/${encodeURIComponent(deckName)}`)
+    } catch {
+      setError('カードの保存に失敗しました')
     }
-    navigate(`/v1/deck/${encodeURIComponent(deckName)}`)
   }
 
   return (
@@ -50,12 +66,13 @@ export default function CardEdit() {
       </header>
 
       <form onSubmit={handleSubmit} className={styles.form}>
+        {error && <p className={styles.error}>{error}</p>}
         <label className={styles.label}>
           表面（問題）
           <input
             type="text"
             value={front}
-            onChange={(e) => setFront(e.target.value)}
+            onChange={(e) => { setFront(e.target.value); setError('') }}
             className={styles.input}
             autoFocus
           />
