@@ -29,10 +29,10 @@ export default function Result() {
   }
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} role="main" aria-label="学習結果">
       <h1 className={styles.title}>学習結果</h1>
 
-      <div className={styles.summary}>
+      <div className={styles.summary} aria-live="polite">
         <div className={styles.score}>
           <span className={styles.scoreNumber}>{percentage}</span>
           <span className={styles.scorePercent}>%</span>
@@ -59,10 +59,16 @@ export default function Result() {
       <div className={styles.actions}>
         {incorrectResults.length > 0 && (
           <Link
-            to={`/v1/deck/${encodeURIComponent(deckName)}/study`}
+            to={`/v1/deck/${encodeURIComponent(deckName)}/study?retry=1`}
             className={styles.btnPrimary}
+            onClick={() => {
+              sessionStorage.setItem(
+                `flipnote-retry-${deckName}`,
+                JSON.stringify(incorrectResults.map((r) => r.front)),
+              )
+            }}
           >
-            もう一度学習する
+            間違えたカードだけ再学習
           </Link>
         )}
         <Link to="/v1/" className={styles.btnSecondary}>

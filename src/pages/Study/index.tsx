@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { getCardsForDeck } from '../../db/operations'
 import { recordAnswer } from '../../db/study'
 import type { Card } from '../../types'
@@ -28,16 +28,27 @@ export default function Study() {
   const [flipped, setFlipped] = useState(false)
   const [results, setResults] = useState<StudyResult[]>([])
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const isRetry = searchParams.get('retry') === '1'
 
   useEffect(() => {
-    getCardsForDeck(deckName).then((c) => {
-      if (c.length === 0) {
+    getCardsForDeck(deckName).then((allCards) => {
+      let targetCards = allCards
+      if (isRetry) {
+        const retryFronts = sessionStorage.getItem(`flipnote-retry-${deckName}`)
+        if (retryFronts) {
+          const fronts: string[] = JSON.parse(retryFronts)
+          targetCards = allCards.filter((c) => fronts.includes(c.front))
+          sessionStorage.removeItem(`flipnote-retry-${deckName}`)
+        }
+      }
+      if (targetCards.length === 0) {
         navigate(`/v1/deck/${encodeURIComponent(deckName)}`)
         return
       }
-      setCards(shuffle(c))
+      setCards(shuffle(targetCards))
     })
-  }, [deckName, navigate])
+  }, [deckName, navigate, isRetry])
 
   const currentCard = cards[currentIndex]
 
@@ -56,6 +67,23 @@ export default function Study() {
     }
   }, [currentCard, currentIndex, cards.length, deckName, navigate, results])
 
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault()
+        if (!flipped) setFlipped(true)
+      } else if (flipped) {
+        if (e.key === 'ArrowLeft' || e.key === '1') {
+          handleAnswer('incorrect')
+        } else if (e.key === 'ArrowRight' || e.key === '2') {
+          handleAnswer('correct')
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [flipped, handleAnswer])
+
   if (cards.length === 0 || !currentCard) return null
 
   return (
@@ -67,7 +95,7 @@ export default function Study() {
         </div>
       </header>
 
-      <div className={styles.progressBar}>
+      <div className={styles.progressBar} role="progressbar" aria-valuenow={currentIndex} aria-valuemin={0} aria-valuemax={cards.length}>
         <div
           className={styles.progressFill}
           style={{ width: `${((currentIndex) / cards.length) * 100}%` }}
@@ -77,11 +105,14 @@ export default function Study() {
       <div
         className={`${styles.card} ${flipped ? styles.flipped : ''}`}
         onClick={() => !flipped && setFlipped(true)}
+        role="button"
+        tabIndex={0}
+        aria-label={flipped ? `答え: ${currentCard.back}` : `問題: ${currentCard.front} - クリックまたはスペースキーで裏返す`}
       >
         <div className={styles.cardInner}>
           <div className={styles.cardFront}>
             <p className={styles.cardText}>{currentCard.front}</p>
-            {!flipped && <p className={styles.tapHint}>タップして裏返す</p>}
+            {!flipped && <p className={styles.tapHint}>タップ / スペースキーで裏返す</p>}
           </div>
           <div className={styles.cardBack}>
             <p className={styles.cardText}>{currentCard.back}</p>
@@ -95,13 +126,13 @@ export default function Study() {
             onClick={() => handleAnswer('incorrect')}
             className={styles.btnIncorrect}
           >
-            もう一度
+            もう一度 (← / 1)
           </button>
           <button
             onClick={() => handleAnswer('correct')}
             className={styles.btnCorrect}
           >
-            覚えた
+            覚えた (→ / 2)
           </button>
         </div>
       )}

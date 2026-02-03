@@ -6,6 +6,8 @@ import {
   getAllDecks,
   renameDeck,
   deleteDeck,
+  updateDeckDescription,
+  getDeckSummaries,
   addCard,
   getCardsForDeck,
   updateCard,
@@ -59,6 +61,34 @@ describe('デッキ管理', () => {
 
     expect(await db.cards.where('deckName').equals('旧名').count()).toBe(0)
     expect(await db.dailyStats.where('deckName').equals('旧名').count()).toBe(0)
+  })
+
+  it('デッキの説明を更新できる', async () => {
+    await createDeck('英単語', '初期説明')
+    await updateDeckDescription('英単語', '更新後の説明')
+    const deck = await db.decks.get('英単語')
+    expect(deck!.description).toBe('更新後の説明')
+  })
+
+  it('getDeckSummaries でカード枚数と最終学習日を取得できる', async () => {
+    await createDeck('英単語')
+    await createDeck('IT用語')
+    await addCard('英単語', 'apple', 'りんご')
+    await addCard('英単語', 'book', '本')
+    await addCard('IT用語', 'API', 'インターフェース')
+    await db.cards.update(['英単語', 'apple'], { lastStudiedAt: new Date('2026-02-04T00:00:00Z').getTime() })
+    await db.cards.update(['英単語', 'book'], { lastStudiedAt: new Date('2026-02-03T00:00:00Z').getTime() })
+
+    const summaries = await getDeckSummaries()
+    expect(summaries).toHaveLength(2)
+
+    const eigo = summaries.find((s) => s.name === '英単語')!
+    expect(eigo.cardCount).toBe(2)
+    expect(eigo.lastStudiedAt).toBe(new Date('2026-02-04T00:00:00Z').getTime())
+
+    const it_ = summaries.find((s) => s.name === 'IT用語')!
+    expect(it_.cardCount).toBe(1)
+    expect(it_.lastStudiedAt).toBeNull()
   })
 
   it('デッキを削除すると Card と DailyStats も削除される', async () => {

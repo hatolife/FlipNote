@@ -39,6 +39,41 @@ export async function renameDeck(oldName: string, newName: string): Promise<void
   })
 }
 
+export async function updateDeckDescription(name: string, description: string): Promise<void> {
+  await db.decks.update(name, { description, updatedAt: Date.now() })
+}
+
+export interface DeckSummary {
+  name: string
+  description: string
+  cardCount: number
+  lastStudiedAt: number | null
+  createdAt: number
+  updatedAt: number
+}
+
+export async function getDeckSummaries(): Promise<DeckSummary[]> {
+  const decks = await db.decks.toArray()
+  const summaries: DeckSummary[] = []
+  for (const deck of decks) {
+    const cards = await db.cards.where('deckName').equals(deck.name).toArray()
+    const studiedCards = cards.filter((c) => c.lastStudiedAt !== null)
+    const lastStudiedAt =
+      studiedCards.length > 0
+        ? Math.max(...studiedCards.map((c) => c.lastStudiedAt!))
+        : null
+    summaries.push({
+      name: deck.name,
+      description: deck.description,
+      cardCount: cards.length,
+      lastStudiedAt,
+      createdAt: deck.createdAt,
+      updatedAt: deck.updatedAt,
+    })
+  }
+  return summaries
+}
+
 export async function deleteDeck(name: string): Promise<void> {
   await db.transaction('rw', [db.decks, db.cards, db.dailyStats], async () => {
     await db.decks.delete(name)

@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { getAllDecks, createDeck } from '../../db/operations'
-import type { Deck } from '../../types'
+import { createDeck, getDeckSummaries, type DeckSummary } from '../../db/operations'
 import styles from './DeckList.module.css'
 
 export default function DeckList() {
-  const [decks, setDecks] = useState<Deck[]>([])
+  const [decks, setDecks] = useState<DeckSummary[]>([])
   const [showForm, setShowForm] = useState(false)
   const [newName, setNewName] = useState('')
   const navigate = useNavigate()
@@ -15,7 +14,7 @@ export default function DeckList() {
   }, [])
 
   async function loadDecks() {
-    const result = await getAllDecks()
+    const result = await getDeckSummaries()
     setDecks(result)
   }
 
@@ -27,6 +26,11 @@ export default function DeckList() {
     setNewName('')
     setShowForm(false)
     navigate(`/v1/deck/${encodeURIComponent(name)}`)
+  }
+
+  function formatDate(timestamp: number | null): string {
+    if (timestamp === null) return '未学習'
+    return new Date(timestamp).toLocaleDateString('ja-JP')
   }
 
   return (
@@ -45,7 +49,9 @@ export default function DeckList() {
           <li key={deck.name}>
             <Link to={`/v1/deck/${encodeURIComponent(deck.name)}`} className={styles.deckCard}>
               <span className={styles.deckName}>{deck.name}</span>
-              <span className={styles.deckMeta}>{deck.description}</span>
+              <span className={styles.deckMeta}>
+                {deck.cardCount}枚 ・ 最終学習: {formatDate(deck.lastStudiedAt)}
+              </span>
             </Link>
           </li>
         ))}

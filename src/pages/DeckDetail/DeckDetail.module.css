@@ -57,6 +57,38 @@
   cursor: pointer;
 }
 
+.description {
+  color: #666;
+  font-size: 0.9rem;
+  margin: 0 0 1rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 6px;
+}
+
+.description:hover {
+  background: #f9fafb;
+}
+
+.descForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.descInput {
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.formActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .actions {
   display: flex;
   gap: 0.5rem;
