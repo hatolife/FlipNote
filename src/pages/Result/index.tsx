@@ -5,7 +5,6 @@ import styles from './Result.module.css'
 interface StudyResult {
   front: string
   back: string
-  pronunciation?: string
   result: 'correct' | 'incorrect'
 }
 
@@ -52,9 +51,14 @@ export default function Result() {
                 <span className={styles.incorrectFront}>{r.front}</span>
                 <span className={styles.incorrectBack}>
                   {r.back}
-                  {r.pronunciation && (
-                    <span className={styles.incorrectPronunciation}>{r.pronunciation}</span>
-                  )}
+                  <a
+                    href={`https://translate.google.co.jp/?sl=auto&tl=ja&text=${encodeURIComponent(r.back)}&op=translate`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.incorrectTranslateLink}
+                  >
+                    Google翻訳で確認
+                  </a>
                 </span>
               </li>
             ))}

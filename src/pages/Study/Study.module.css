@@ -89,10 +89,15 @@
   word-break: break-word;
 }
 
-.pronunciation {
-  font-size: 1rem;
-  color: #666;
+.translateLink {
+  font-size: 0.85rem;
+  color: #4f46e5;
+  text-decoration: none;
   margin: 0.5rem 0 0;
+}
+
+.translateLink:hover {
+  text-decoration: underline;
 }
 
 .tapHint {

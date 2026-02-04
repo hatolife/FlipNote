@@ -12,7 +12,6 @@ export default function CardEdit() {
 
   const [front, setFront] = useState('')
   const [back, setBack] = useState('')
-  const [pronunciation, setPronunciation] = useState('')
   const [error, setError] = useState('')
   const navigate = useNavigate()
 
@@ -22,7 +21,6 @@ export default function CardEdit() {
         if (card) {
           setFront(card.front)
           setBack(card.back)
-          setPronunciation(card.pronunciation ?? '')
         }
       })
     }
@@ -42,7 +40,7 @@ export default function CardEdit() {
           setError(`「${trimmedFront}」は既に存在します`)
           return
         }
-        await addCard(deckName, trimmedFront, trimmedBack, pronunciation)
+        await addCard(deckName, trimmedFront, trimmedBack)
       } else {
         if (trimmedFront !== editingFront) {
           const existing = await db.cards.get([deckName, trimmedFront])
@@ -52,7 +50,7 @@ export default function CardEdit() {
           }
           await updateCardFront(deckName, editingFront!, trimmedFront)
         }
-        await updateCard(deckName, trimmedFront, { back: trimmedBack, pronunciation })
+        await updateCard(deckName, trimmedFront, { back: trimmedBack })
       }
       navigate(`/v1/deck/${encodeURIComponent(deckName)}`)
     } catch {
@@ -85,15 +83,6 @@ export default function CardEdit() {
             type="text"
             value={back}
             onChange={(e) => setBack(e.target.value)}
-            className={styles.input}
-          />
-        </label>
-        <label className={styles.label}>
-          発音記号（任意）
-          <input
-            type="text"
-            value={pronunciation}
-            onChange={(e) => setPronunciation(e.target.value)}
             className={styles.input}
           />
         </label>

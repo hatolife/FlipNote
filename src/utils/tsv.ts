@@ -1,6 +1,6 @@
 import type { Card } from '../types'
 
-const HEADER = 'front\tback\tpronunciation\tcorrectCount\tincorrectCount\tlastStudiedAt'
+const HEADER = 'front\tback\tcorrectCount\tincorrectCount\tlastStudiedAt'
 
 export function generateTsv(cards: Card[]): string {
   const lines = [HEADER]
@@ -8,7 +8,7 @@ export function generateTsv(cards: Card[]): string {
     const lastStudied = card.lastStudiedAt
       ? new Date(card.lastStudiedAt).toISOString()
       : ''
-    lines.push(`${card.front}\t${card.back}\t${card.pronunciation}\t${card.correctCount}\t${card.incorrectCount}\t${lastStudied}`)
+    lines.push(`${card.front}\t${card.back}\t${card.correctCount}\t${card.incorrectCount}\t${lastStudied}`)
   }
   return lines.join('\n')
 }
@@ -16,7 +16,6 @@ export function generateTsv(cards: Card[]): string {
 export interface ParsedCard {
   front: string
   back: string
-  pronunciation: string
   correctCount: number
   incorrectCount: number
   lastStudiedAt: number | null
@@ -34,7 +33,6 @@ export function parseTsv(tsv: string): ParsedCard[] {
     const headers = firstLine.split('\t')
     const frontIdx = headers.indexOf('front')
     const backIdx = headers.indexOf('back')
-    const pronunciationIdx = headers.indexOf('pronunciation')
     const correctIdx = headers.indexOf('correctCount')
     const incorrectIdx = headers.indexOf('incorrectCount')
     const lastStudiedIdx = headers.indexOf('lastStudiedAt')
@@ -44,7 +42,6 @@ export function parseTsv(tsv: string): ParsedCard[] {
       return {
         front: cols[frontIdx] ?? '',
         back: cols[backIdx] ?? '',
-        pronunciation: pronunciationIdx >= 0 ? cols[pronunciationIdx] ?? '' : '',
         correctCount: correctIdx >= 0 ? Number(cols[correctIdx]) || 0 : 0,
         incorrectCount: incorrectIdx >= 0 ? Number(cols[incorrectIdx]) || 0 : 0,
         lastStudiedAt:
@@ -60,7 +57,6 @@ export function parseTsv(tsv: string): ParsedCard[] {
     return {
       front,
       back,
-      pronunciation: '',
       correctCount: 0,
       incorrectCount: 0,
       lastStudiedAt: null,

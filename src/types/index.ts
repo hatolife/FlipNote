@@ -9,7 +9,6 @@ export interface Card {
   deckName: string
   front: string
   back: string
-  pronunciation: string
   correctCount: number
   incorrectCount: number
   lastStudiedAt: number | null

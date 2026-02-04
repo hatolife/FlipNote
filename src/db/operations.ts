@@ -84,13 +84,12 @@ export async function deleteDeck(name: string): Promise<void> {
 
 // --- カード管理 ---
 
-export async function addCard(deckName: string, front: string, back: string, pronunciation = ''): Promise<void> {
+export async function addCard(deckName: string, front: string, back: string): Promise<void> {
   const now = Date.now()
   await db.cards.add({
     deckName,
     front,
     back,
-    pronunciation,
     correctCount: 0,
     incorrectCount: 0,
     lastStudiedAt: null,
@@ -106,7 +105,7 @@ export async function getCardsForDeck(deckName: string): Promise<Card[]> {
 export async function updateCard(
   deckName: string,
   front: string,
-  updates: Partial<Pick<Card, 'back' | 'pronunciation' | 'correctCount' | 'incorrectCount' | 'lastStudiedAt'>>,
+  updates: Partial<Pick<Card, 'back' | 'correctCount' | 'incorrectCount' | 'lastStudiedAt'>>,
 ): Promise<void> {
   await db.cards.update([deckName, front], { ...updates, updatedAt: Date.now() })
 }

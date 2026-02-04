@@ -73,10 +73,15 @@
   flex: 1;
 }
 
-.incorrectPronunciation {
+.incorrectTranslateLink {
   display: block;
   font-size: 0.85rem;
-  color: #999;
+  color: #4f46e5;
+  text-decoration: none;
+}
+
+.incorrectTranslateLink:hover {
+  text-decoration: underline;
 }
 
 .actions {

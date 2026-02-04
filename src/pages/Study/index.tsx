@@ -17,7 +17,6 @@ function shuffle<T>(array: T[]): T[] {
 interface StudyResult {
   front: string
   back: string
-  pronunciation?: string
   result: 'correct' | 'incorrect'
 }
 
@@ -56,7 +55,7 @@ export default function Study() {
   const handleAnswer = useCallback(async (result: 'correct' | 'incorrect') => {
     if (!currentCard) return
     await recordAnswer(deckName, currentCard.front, result)
-    const newResults = [...results, { front: currentCard.front, back: currentCard.back, pronunciation: currentCard.pronunciation, result }]
+    const newResults = [...results, { front: currentCard.front, back: currentCard.back, result }]
     setResults(newResults)
 
     if (currentIndex + 1 >= cards.length) {
@@ -117,9 +116,15 @@ export default function Study() {
           </div>
           <div className={styles.cardBack}>
             <p className={styles.cardText}>{currentCard.back}</p>
-            {currentCard.pronunciation && (
-              <p className={styles.pronunciation}>{currentCard.pronunciation}</p>
-            )}
+            <a
+              href={`https://translate.google.co.jp/?sl=auto&tl=ja&text=${encodeURIComponent(currentCard.back)}&op=translate`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.translateLink}
+              onClick={(e) => e.stopPropagation()}
+            >
+              Google翻訳で確認
+            </a>
           </div>
         </div>
       </div>

@@ -121,17 +121,9 @@ describe('カード管理', () => {
     const card = await db.cards.get(['英単語', 'apple'])
     expect(card).toBeDefined()
     expect(card!.back).toBe('りんご')
-    expect(card!.pronunciation).toBe('')
     expect(card!.correctCount).toBe(0)
     expect(card!.incorrectCount).toBe(0)
     expect(card!.lastStudiedAt).toBeNull()
-  })
-
-  it('発音記号付きでカードを追加できる', async () => {
-    await addCard('英単語', 'apple', 'りんご', '/ˈæp.əl/')
-    const card = await db.cards.get(['英単語', 'apple'])
-    expect(card).toBeDefined()
-    expect(card!.pronunciation).toBe('/ˈæp.əl/')
   })
 
   it('デッキのカード一覧を取得できる', async () => {
@@ -147,13 +139,6 @@ describe('カード管理', () => {
     await updateCard('英単語', 'apple', { back: '林檎' })
     const card = await db.cards.get(['英単語', 'apple'])
     expect(card!.back).toBe('林檎')
-  })
-
-  it('カードの発音記号を更新できる', async () => {
-    await addCard('英単語', 'apple', 'りんご')
-    await updateCard('英単語', 'apple', { pronunciation: '/ˈæp.əl/' })
-    const card = await db.cards.get(['英単語', 'apple'])
-    expect(card!.pronunciation).toBe('/ˈæp.əl/')
   })
 
   it('カードの表面を変更できる', async () => {
