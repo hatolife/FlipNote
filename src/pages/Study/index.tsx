@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { getCardsForDeck } from '../../db/operations'
 import { recordAnswer } from '../../db/study'
-import type { Card } from '../../types'
+import type { Card, Difficulty } from '../../types'
 import styles from './Study.module.css'
 
 function shuffle<T>(array: T[]): T[] {
@@ -32,6 +32,10 @@ export default function Study() {
   const isRetry = searchParams.get('retry') === '1'
   const tagsParam = searchParams.get('tags')
   const filterTags = tagsParam ? tagsParam.split(',').filter(Boolean) : []
+  const difficultiesParam = searchParams.get('difficulties')
+  const filterDifficulties: Difficulty[] = difficultiesParam
+    ? difficultiesParam.split(',').map(Number).filter((n) => n >= 1 && n <= 5) as Difficulty[]
+    : []
 
   useEffect(() => {
     getCardsForDeck(deckName).then((allCards) => {
@@ -43,10 +47,17 @@ export default function Study() {
           targetCards = allCards.filter((c) => fronts.includes(c.front))
           sessionStorage.removeItem(`flipnote-retry-${deckName}`)
         }
-      } else if (filterTags.length > 0) {
-        targetCards = allCards.filter((c) =>
-          (c.tags ?? []).some((tag) => filterTags.includes(tag))
-        )
+      } else {
+        if (filterTags.length > 0) {
+          targetCards = targetCards.filter((c) =>
+            (c.tags ?? []).some((tag) => filterTags.includes(tag))
+          )
+        }
+        if (filterDifficulties.length > 0) {
+          targetCards = targetCards.filter((c) =>
+            filterDifficulties.includes(c.difficulty ?? 1)
+          )
+        }
       }
       if (targetCards.length === 0) {
         navigate(`/v1/deck/${encodeURIComponent(deckName)}`)
@@ -71,12 +82,17 @@ export default function Study() {
       } else {
         sessionStorage.removeItem(`flipnote-study-tags-${deckName}`)
       }
+      if (filterDifficulties.length > 0) {
+        sessionStorage.setItem(`flipnote-study-difficulties-${deckName}`, JSON.stringify(filterDifficulties))
+      } else {
+        sessionStorage.removeItem(`flipnote-study-difficulties-${deckName}`)
+      }
       navigate(`/v1/deck/${encodeURIComponent(deckName)}/result`)
     } else {
       setCurrentIndex(currentIndex + 1)
       setFlipped(false)
     }
-  }, [currentCard, currentIndex, cards.length, deckName, navigate, results, filterTags])
+  }, [currentCard, currentIndex, cards.length, deckName, navigate, results, filterTags, filterDifficulties])
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {

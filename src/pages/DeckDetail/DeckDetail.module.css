@@ -95,18 +95,33 @@
   margin: 0 0 0.75rem;
 }
 
-.tagFilter {
+.filterSection {
   margin-bottom: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
-.tagFilterChips {
+.filterGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.filterLabel {
+  font-size: 0.75rem;
+  color: #6b7280;
+  min-width: 3rem;
+}
+
+.filterChips {
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem;
-  align-items: center;
 }
 
-.tagFilterChip {
+.filterChip {
   padding: 0.25rem 0.6rem;
   border: 1px solid #d1d5db;
   border-radius: 9999px;
@@ -116,21 +131,26 @@
   cursor: pointer;
 }
 
-.tagFilterChip:hover {
+.filterChip:hover {
   background: #f3f4f6;
 }
 
-.tagFilterChipActive {
+.difficultyChip {
+  min-width: 2rem;
+  text-align: center;
+}
+
+.filterChipActive {
   background: #4f46e5;
   color: #fff;
   border-color: #4f46e5;
 }
 
-.tagFilterChipActive:hover {
+.filterChipActive:hover {
   background: #4338ca;
 }
 
-.tagFilterClear {
+.filterClear {
   padding: 0.25rem 0.6rem;
   border: none;
   background: none;
@@ -139,7 +159,7 @@
   cursor: pointer;
 }
 
-.tagFilterClear:hover {
+.filterClear:hover {
   text-decoration: underline;
 }
 

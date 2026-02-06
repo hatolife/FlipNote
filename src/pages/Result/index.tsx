@@ -23,6 +23,11 @@ export default function Result() {
     return stored ? JSON.parse(stored) : []
   }, [deckName])
 
+  const filterDifficulties: number[] = useMemo(() => {
+    const stored = sessionStorage.getItem(`flipnote-study-difficulties-${deckName}`)
+    return stored ? JSON.parse(stored) : []
+  }, [deckName])
+
   const correctCount = results.filter((r) => r.result === 'correct').length
   const incorrectResults = results.filter((r) => r.result === 'incorrect')
   const total = results.length
@@ -33,9 +38,18 @@ export default function Result() {
     return null
   }
 
-  const retryLink = filterTags.length > 0
-    ? `/v1/deck/${encodeURIComponent(deckName)}/study?retry=1&tags=${encodeURIComponent(filterTags.join(','))}`
-    : `/v1/deck/${encodeURIComponent(deckName)}/study?retry=1`
+  const retryLink = useMemo(() => {
+    const base = `/v1/deck/${encodeURIComponent(deckName)}/study`
+    const params = new URLSearchParams()
+    params.set('retry', '1')
+    if (filterTags.length > 0) {
+      params.set('tags', filterTags.join(','))
+    }
+    if (filterDifficulties.length > 0) {
+      params.set('difficulties', filterDifficulties.join(','))
+    }
+    return `${base}?${params.toString()}`
+  }, [deckName, filterTags, filterDifficulties])
 
   return (
     <div className={styles.container} role="main" aria-label="学習結果">

@@ -3,11 +3,12 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { getCardsForDeck, deleteCard, deleteDeck, renameDeck, updateDeckDescription, getUniqueTags } from '../../db/operations'
 import { mergeImportCards } from '../../db/import'
 import { generateTsv, parseTsv } from '../../utils/tsv'
-import type { Card } from '../../types'
+import type { Card, Difficulty } from '../../types'
 import { db } from '../../db'
 import styles from './DeckDetail.module.css'
 
 const DIFFICULTY_LABELS = ['', '1', '2', '3', '4', '5']
+const ALL_DIFFICULTIES: Difficulty[] = [1, 2, 3, 4, 5]
 
 export default function DeckDetail() {
   const { deckName: rawDeckName } = useParams<{ deckName: string }>()
@@ -19,6 +20,7 @@ export default function DeckDetail() {
   const [editingDesc, setEditingDesc] = useState(false)
   const [newDescription, setNewDescription] = useState('')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [selectedDifficulties, setSelectedDifficulties] = useState<Difficulty[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
 
@@ -43,17 +45,46 @@ export default function DeckDetail() {
 
   const allTags = useMemo(() => getUniqueTags(cards), [cards])
 
+  const usedDifficulties = useMemo(() => {
+    const set = new Set<Difficulty>()
+    for (const card of cards) {
+      set.add(card.difficulty ?? 1)
+    }
+    return ALL_DIFFICULTIES.filter((d) => set.has(d))
+  }, [cards])
+
   const filteredCards = useMemo(() => {
-    if (selectedTags.length === 0) return cards
-    return cards.filter((card) =>
-      (card.tags ?? []).some((tag) => selectedTags.includes(tag))
-    )
-  }, [cards, selectedTags])
+    let result = cards
+    if (selectedTags.length > 0) {
+      result = result.filter((card) =>
+        (card.tags ?? []).some((tag) => selectedTags.includes(tag))
+      )
+    }
+    if (selectedDifficulties.length > 0) {
+      result = result.filter((card) =>
+        selectedDifficulties.includes(card.difficulty ?? 1)
+      )
+    }
+    return result
+  }, [cards, selectedTags, selectedDifficulties])
 
   function toggleTag(tag: string) {
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     )
+  }
+
+  function toggleDifficulty(d: Difficulty) {
+    setSelectedDifficulties((prev) =>
+      prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]
+    )
+  }
+
+  const hasFilter = selectedTags.length > 0 || selectedDifficulties.length > 0
+
+  function clearFilters() {
+    setSelectedTags([])
+    setSelectedDifficulties([])
   }
 
   async function handleDeleteDeck() {
@@ -101,11 +132,20 @@ export default function DeckDetail() {
     await loadCards()
   }
 
-  const studyLink = selectedTags.length > 0
-    ? `/v1/deck/${encodeURIComponent(deckName)}/study?tags=${encodeURIComponent(selectedTags.join(','))}`
-    : `/v1/deck/${encodeURIComponent(deckName)}/study`
+  const studyLink = useMemo(() => {
+    const base = `/v1/deck/${encodeURIComponent(deckName)}/study`
+    const params = new URLSearchParams()
+    if (selectedTags.length > 0) {
+      params.set('tags', selectedTags.join(','))
+    }
+    if (selectedDifficulties.length > 0) {
+      params.set('difficulties', selectedDifficulties.join(','))
+    }
+    const query = params.toString()
+    return query ? `${base}?${query}` : base
+  }, [deckName, selectedTags, selectedDifficulties])
 
-  const studyButtonText = selectedTags.length > 0
+  const studyButtonText = hasFilter
     ? `${filteredCards.length}枚を学習する`
     : '学習を始める'
 
@@ -165,30 +205,51 @@ export default function DeckDetail() {
       )}
 
       <p className={styles.cardCount}>
-        {selectedTags.length > 0
+        {hasFilter
           ? `${filteredCards.length} / ${cards.length}枚のカード`
           : `${cards.length}枚のカード`
         }
       </p>
 
-      {allTags.length > 0 && (
-        <div className={styles.tagFilter}>
-          <div className={styles.tagFilterChips}>
-            {allTags.map((tag) => (
-              <button
-                key={tag}
-                className={`${styles.tagFilterChip} ${selectedTags.includes(tag) ? styles.tagFilterChipActive : ''}`}
-                onClick={() => toggleTag(tag)}
-              >
-                {tag}
-              </button>
-            ))}
-            {selectedTags.length > 0 && (
-              <button className={styles.tagFilterClear} onClick={() => setSelectedTags([])}>
-                フィルタ解除
-              </button>
-            )}
-          </div>
+      {(allTags.length > 0 || usedDifficulties.length > 1) && (
+        <div className={styles.filterSection}>
+          {allTags.length > 0 && (
+            <div className={styles.filterGroup}>
+              <span className={styles.filterLabel}>タグ</span>
+              <div className={styles.filterChips}>
+                {allTags.map((tag) => (
+                  <button
+                    key={tag}
+                    className={`${styles.filterChip} ${selectedTags.includes(tag) ? styles.filterChipActive : ''}`}
+                    onClick={() => toggleTag(tag)}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {usedDifficulties.length > 1 && (
+            <div className={styles.filterGroup}>
+              <span className={styles.filterLabel}>難易度</span>
+              <div className={styles.filterChips}>
+                {usedDifficulties.map((d) => (
+                  <button
+                    key={d}
+                    className={`${styles.filterChip} ${styles.difficultyChip} ${selectedDifficulties.includes(d) ? styles.filterChipActive : ''}`}
+                    onClick={() => toggleDifficulty(d)}
+                  >
+                    {d}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {hasFilter && (
+            <button className={styles.filterClear} onClick={clearFilters}>
+              フィルタ解除
+            </button>
+          )}
         </div>
       )}
 
