@@ -39,8 +39,6 @@ export default function Study() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [flipped, setFlipped] = useState(false)
   const [results, setResults] = useState<StudyResult[]>([])
-  const [showResumePrompt, setShowResumePrompt] = useState(false)
-  const [savedProgress, setSavedProgress] = useState<StudyProgress | null>(null)
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const isRetry = searchParams.get('retry') === '1'
@@ -53,14 +51,26 @@ export default function Study() {
   const isReverse = searchParams.get('reverse') === '1'
 
   useEffect(() => {
-    // 保存された進捗をチェック
+    // 保存された進捗をチェック（ページ更新時は自動再開）
     const progressJson = localStorage.getItem(PROGRESS_KEY(deckName))
     if (progressJson && !isRetry) {
       try {
         const progress: StudyProgress = JSON.parse(progressJson)
         if (progress.currentIndex < progress.cardFronts.length) {
-          setSavedProgress(progress)
-          setShowResumePrompt(true)
+          // 自動的に再開
+          getCardsForDeck(deckName).then((allCards) => {
+            const cardMap = new Map(allCards.map((c) => [c.front, c]))
+            const orderedCards = progress.cardFronts
+              .map((front) => cardMap.get(front))
+              .filter((c): c is Card => c !== undefined)
+            if (orderedCards.length === 0) {
+              startNewSession()
+              return
+            }
+            setCards(orderedCards)
+            setCurrentIndex(progress.currentIndex)
+            setResults(progress.results)
+          })
           return
         }
       } catch {
@@ -71,8 +81,6 @@ export default function Study() {
   }, [deckName, isRetry])
 
   function startNewSession() {
-    setShowResumePrompt(false)
-    setSavedProgress(null)
     getCardsForDeck(deckName).then((allCards) => {
       let targetCards = allCards
       if (isRetry) {
@@ -98,29 +106,27 @@ export default function Study() {
         navigate(`/v1/deck/${encodeURIComponent(deckName)}`)
         return
       }
-      localStorage.removeItem(PROGRESS_KEY(deckName))
-      setCards(shuffle(targetCards))
+      const shuffled = shuffle(targetCards)
+      // 進捗を即座に保存（ページ更新対策）
+      const progress: StudyProgress = {
+        cardFronts: shuffled.map((c) => c.front),
+        currentIndex: 0,
+        results: [],
+        filterTags,
+        filterDifficulties,
+        isReverse,
+        savedAt: Date.now(),
+      }
+      localStorage.setItem(PROGRESS_KEY(deckName), JSON.stringify(progress))
+      setCards(shuffled)
       setCurrentIndex(0)
       setResults([])
     })
   }
 
-  function resumeSession() {
-    if (!savedProgress) return
-    setShowResumePrompt(false)
-    getCardsForDeck(deckName).then((allCards) => {
-      const cardMap = new Map(allCards.map((c) => [c.front, c]))
-      const orderedCards = savedProgress.cardFronts
-        .map((front) => cardMap.get(front))
-        .filter((c): c is Card => c !== undefined)
-      if (orderedCards.length === 0) {
-        startNewSession()
-        return
-      }
-      setCards(orderedCards)
-      setCurrentIndex(savedProgress.currentIndex)
-      setResults(savedProgress.results)
-    })
+  function restartSession() {
+    localStorage.removeItem(PROGRESS_KEY(deckName))
+    startNewSession()
   }
 
   const currentCard = cards[currentIndex]
@@ -186,29 +192,6 @@ export default function Study() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [flipped, handleAnswer])
 
-  if (showResumePrompt && savedProgress) {
-    const remaining = savedProgress.cardFronts.length - savedProgress.currentIndex
-    const done = savedProgress.currentIndex
-    return (
-      <div className={styles.container}>
-        <div className={styles.resumePrompt}>
-          <h2 className={styles.resumeTitle}>前回の続きがあります</h2>
-          <p className={styles.resumeInfo}>
-            {savedProgress.cardFronts.length}枚中 {done}枚完了（残り{remaining}枚）
-          </p>
-          <div className={styles.resumeButtons}>
-            <button onClick={resumeSession} className={styles.btnResume}>
-              続きから再開
-            </button>
-            <button onClick={startNewSession} className={styles.btnNewSession}>
-              最初から始める
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   if (cards.length === 0 || !currentCard) return null
 
   const questionText = isReverse ? currentCard.back : currentCard.front
@@ -218,6 +201,7 @@ export default function Study() {
     <div className={styles.container}>
       <header className={styles.header}>
         <Link to={`/v1/deck/${encodeURIComponent(deckName)}`} className={styles.back}>× 中止</Link>
+        <button onClick={restartSession} className={styles.restart}>最初から</button>
         <div className={styles.progress}>
           {currentIndex + 1} / {cards.length}
         </div>
