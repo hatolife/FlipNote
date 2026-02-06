@@ -104,7 +104,7 @@ export default function Study() {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === ' ' || e.key === 'Enter') {
         e.preventDefault()
-        if (!flipped) setFlipped(true)
+        setFlipped(!flipped)
       } else if (flipped) {
         if (e.key === 'ArrowLeft' || e.key === '1') {
           handleAnswer('incorrect')
@@ -172,16 +172,22 @@ export default function Study() {
       {flipped && (
         <div className={styles.buttons}>
           <button
+            onClick={() => setFlipped(false)}
+            className={styles.btnFlip}
+          >
+            問題を見る
+          </button>
+          <button
             onClick={() => handleAnswer('incorrect')}
             className={styles.btnIncorrect}
           >
-            もう一度 (← / 1)
+            不正解 (← / 1)
           </button>
           <button
             onClick={() => handleAnswer('correct')}
             className={styles.btnCorrect}
           >
-            覚えた (→ / 2)
+            正解 (→ / 2)
           </button>
         </div>
       )}
