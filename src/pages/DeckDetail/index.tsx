@@ -280,9 +280,11 @@ export default function DeckDetail() {
 
       {cards.length === 0 ? (
         <p className={styles.empty}>カードがありません。追加またはインポートしてください。</p>
+      ) : filteredCards.length === 0 ? (
+        <p className={styles.empty}>フィルタに一致するカードがありません。</p>
       ) : (
         <ul className={styles.cardList}>
-          {cards.map((card) => (
+          {filteredCards.map((card) => (
             <li key={card.front} className={styles.cardItem}>
               <Link
                 to={`/v1/deck/${encodeURIComponent(deckName)}/card/${encodeURIComponent(card.front)}/edit`}
