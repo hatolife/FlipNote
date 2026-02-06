@@ -28,6 +28,10 @@ export default function Result() {
     return stored ? JSON.parse(stored) : []
   }, [deckName])
 
+  const isReverse = useMemo(() => {
+    return sessionStorage.getItem(`flipnote-study-reverse-${deckName}`) === '1'
+  }, [deckName])
+
   const correctCount = results.filter((r) => r.result === 'correct').length
   const incorrectResults = results.filter((r) => r.result === 'incorrect')
   const total = results.length
@@ -48,8 +52,11 @@ export default function Result() {
     if (filterDifficulties.length > 0) {
       params.set('difficulties', filterDifficulties.join(','))
     }
+    if (isReverse) {
+      params.set('reverse', '1')
+    }
     return `${base}?${params.toString()}`
-  }, [deckName, filterTags, filterDifficulties])
+  }, [deckName, filterTags, filterDifficulties, isReverse])
 
   return (
     <div className={styles.container} role="main" aria-label="学習結果">

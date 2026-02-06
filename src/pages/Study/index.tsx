@@ -36,6 +36,7 @@ export default function Study() {
   const filterDifficulties: Difficulty[] = difficultiesParam
     ? difficultiesParam.split(',').map(Number).filter((n) => n >= 1 && n <= 5) as Difficulty[]
     : []
+  const isReverse = searchParams.get('reverse') === '1'
 
   useEffect(() => {
     getCardsForDeck(deckName).then((allCards) => {
@@ -87,6 +88,11 @@ export default function Study() {
       } else {
         sessionStorage.removeItem(`flipnote-study-difficulties-${deckName}`)
       }
+      if (isReverse) {
+        sessionStorage.setItem(`flipnote-study-reverse-${deckName}`, '1')
+      } else {
+        sessionStorage.removeItem(`flipnote-study-reverse-${deckName}`)
+      }
       navigate(`/v1/deck/${encodeURIComponent(deckName)}/result`)
     } else {
       setCurrentIndex(currentIndex + 1)
@@ -113,6 +119,9 @@ export default function Study() {
 
   if (cards.length === 0 || !currentCard) return null
 
+  const questionText = isReverse ? currentCard.back : currentCard.front
+  const answerText = isReverse ? currentCard.front : currentCard.back
+
   return (
     <div className={styles.container}>
       <header className={styles.header}>
@@ -134,7 +143,7 @@ export default function Study() {
         onClick={() => !flipped && setFlipped(true)}
         role="button"
         tabIndex={0}
-        aria-label={flipped ? `答え: ${currentCard.back}` : `問題: ${currentCard.front} - クリックまたはスペースキーで裏返す`}
+        aria-label={flipped ? `答え: ${answerText}` : `問題: ${questionText} - クリックまたはスペースキーで裏返す`}
       >
         <div className={styles.cardInner}>
           <div className={styles.cardFront}>
@@ -142,13 +151,13 @@ export default function Study() {
               {(currentCard.tags ?? []).length > 0 && <span className={styles.cardTag}>{currentCard.tags.join(', ')}</span>}
               <span className={styles.cardDifficulty}>難易度 {currentCard.difficulty ?? 1}</span>
             </div>
-            <p className={styles.cardText}>{currentCard.front}</p>
+            <p className={styles.cardText}>{questionText}</p>
             {!flipped && <p className={styles.tapHint}>タップ / スペースキーで裏返す</p>}
           </div>
           <div className={styles.cardBack}>
-            <p className={styles.cardText}>{currentCard.back}</p>
+            <p className={styles.cardText}>{answerText}</p>
             <a
-              href={`https://translate.google.co.jp/?sl=auto&tl=ja&text=${encodeURIComponent(currentCard.back)}&op=translate`}
+              href={`https://translate.google.co.jp/?sl=auto&tl=ja&text=${encodeURIComponent(answerText)}&op=translate`}
               target="_blank"
               rel="noopener noreferrer"
               className={styles.translateLink}

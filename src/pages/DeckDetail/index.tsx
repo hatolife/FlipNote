@@ -21,6 +21,7 @@ export default function DeckDetail() {
   const [newDescription, setNewDescription] = useState('')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [selectedDifficulties, setSelectedDifficulties] = useState<Difficulty[]>([])
+  const [reverseMode, setReverseMode] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
 
@@ -141,9 +142,12 @@ export default function DeckDetail() {
     if (selectedDifficulties.length > 0) {
       params.set('difficulties', selectedDifficulties.join(','))
     }
+    if (reverseMode) {
+      params.set('reverse', '1')
+    }
     const query = params.toString()
     return query ? `${base}?${query}` : base
-  }, [deckName, selectedTags, selectedDifficulties])
+  }, [deckName, selectedTags, selectedDifficulties, reverseMode])
 
   const studyButtonText = hasFilter
     ? `${filteredCards.length}枚を学習する`
@@ -252,6 +256,17 @@ export default function DeckDetail() {
           )}
         </div>
       )}
+
+      <div className={styles.studyOptions}>
+        <label className={styles.reverseToggle}>
+          <input
+            type="checkbox"
+            checked={reverseMode}
+            onChange={(e) => setReverseMode(e.target.checked)}
+          />
+          <span>裏→表で学習</span>
+        </label>
+      </div>
 
       <div className={styles.actions}>
         <Link to={studyLink} className={styles.studyBtn}>
