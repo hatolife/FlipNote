@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { createDeck, getDeckSummaries, addCard, type DeckSummary } from '../../db/operations'
+import { createDeck, getDeckSummaries, type DeckSummary } from '../../db/operations'
 import { parseTsv } from '../../utils/tsv'
 import { db } from '../../db'
 import styles from './DeckList.module.css'
@@ -62,16 +62,24 @@ export default function DeckList() {
 
       await createDeck(sample.name, sample.description)
 
+      const now = Date.now()
+      const seen = new Set<string>()
       await db.transaction('rw', db.cards, async () => {
         for (const item of parsed) {
-          await addCard(sample.name, item.front, item.back, item.tag, item.difficulty)
-          if (item.correctCount || item.incorrectCount || item.lastStudiedAt) {
-            await db.cards.update([sample.name, item.front], {
-              correctCount: item.correctCount,
-              incorrectCount: item.incorrectCount,
-              lastStudiedAt: item.lastStudiedAt,
-            })
-          }
+          if (seen.has(item.front)) continue
+          seen.add(item.front)
+          await db.cards.put({
+            deckName: sample.name,
+            front: item.front,
+            back: item.back,
+            tag: item.tag,
+            difficulty: item.difficulty,
+            correctCount: item.correctCount,
+            incorrectCount: item.incorrectCount,
+            lastStudiedAt: item.lastStudiedAt,
+            createdAt: now,
+            updatedAt: now,
+          })
         }
       })
 
