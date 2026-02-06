@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { getCardsForDeck, addCard, deleteCard, deleteDeck, renameDeck, updateDeckDescription } from '../../db/operations'
+import { getCardsForDeck, deleteCard, deleteDeck, renameDeck, updateDeckDescription } from '../../db/operations'
+import { mergeImportCards } from '../../db/import'
 import { generateTsv, parseTsv } from '../../utils/tsv'
 import type { Card } from '../../types'
 import { db } from '../../db'
@@ -78,33 +79,7 @@ export default function DeckDetail() {
     if (!file) return
     const text = await file.text()
     const parsed = parseTsv(text)
-    const now = Date.now()
-
-    await db.transaction('rw', db.cards, async () => {
-      for (const item of parsed) {
-        const existing = await db.cards.get([deckName, item.front])
-        if (existing) {
-          await db.cards.update([deckName, item.front], {
-            back: item.back,
-            tag: item.tag,
-            difficulty: item.difficulty,
-            correctCount: item.correctCount,
-            incorrectCount: item.incorrectCount,
-            lastStudiedAt: item.lastStudiedAt,
-            updatedAt: now,
-          })
-        } else {
-          await addCard(deckName, item.front, item.back, item.tag, item.difficulty)
-          if (item.correctCount || item.incorrectCount || item.lastStudiedAt) {
-            await db.cards.update([deckName, item.front], {
-              correctCount: item.correctCount,
-              incorrectCount: item.incorrectCount,
-              lastStudiedAt: item.lastStudiedAt,
-            })
-          }
-        }
-      }
-    })
+    await mergeImportCards(deckName, parsed)
 
     if (fileInputRef.current) fileInputRef.current.value = ''
     await loadCards()

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { createDeck, getDeckSummaries, type DeckSummary } from '../../db/operations'
+import { importCardsToNewDeck } from '../../db/import'
 import { parseTsv } from '../../utils/tsv'
-import { db } from '../../db'
 import styles from './DeckList.module.css'
 
 interface SampleDeck {
@@ -61,27 +61,7 @@ export default function DeckList() {
       const parsed = parseTsv(text)
 
       await createDeck(sample.name, sample.description)
-
-      const now = Date.now()
-      const seen = new Set<string>()
-      await db.transaction('rw', db.cards, async () => {
-        for (const item of parsed) {
-          if (seen.has(item.front)) continue
-          seen.add(item.front)
-          await db.cards.put({
-            deckName: sample.name,
-            front: item.front,
-            back: item.back,
-            tag: item.tag,
-            difficulty: item.difficulty,
-            correctCount: item.correctCount,
-            incorrectCount: item.incorrectCount,
-            lastStudiedAt: item.lastStudiedAt,
-            createdAt: now,
-            updatedAt: now,
-          })
-        }
-      })
+      await importCardsToNewDeck(sample.name, parsed)
 
       navigate(`/v1/deck/${encodeURIComponent(sample.name)}`)
     } catch {
