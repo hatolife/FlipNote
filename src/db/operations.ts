@@ -88,7 +88,7 @@ export async function addCard(
   deckName: string,
   front: string,
   back: string,
-  tag = '',
+  tags: string[] = [],
   difficulty: Difficulty = 1,
 ): Promise<void> {
   const now = Date.now()
@@ -96,7 +96,7 @@ export async function addCard(
     deckName,
     front,
     back,
-    tag,
+    tags,
     difficulty,
     correctCount: 0,
     incorrectCount: 0,
@@ -113,7 +113,7 @@ export async function getCardsForDeck(deckName: string): Promise<Card[]> {
 export async function updateCard(
   deckName: string,
   front: string,
-  updates: Partial<Pick<Card, 'back' | 'tag' | 'difficulty' | 'correctCount' | 'incorrectCount' | 'lastStudiedAt'>>,
+  updates: Partial<Pick<Card, 'back' | 'tags' | 'difficulty' | 'correctCount' | 'incorrectCount' | 'lastStudiedAt'>>,
 ): Promise<void> {
   await db.cards.update([deckName, front], { ...updates, updatedAt: Date.now() })
 }
@@ -134,4 +134,16 @@ export async function updateCardFront(
 
 export async function deleteCard(deckName: string, front: string): Promise<void> {
   await db.cards.delete([deckName, front])
+}
+
+export function getUniqueTags(cards: Card[]): string[] {
+  const tagSet = new Set<string>()
+  for (const card of cards) {
+    if (card.tags) {
+      for (const tag of card.tags) {
+        tagSet.add(tag)
+      }
+    }
+  }
+  return [...tagSet].sort()
 }

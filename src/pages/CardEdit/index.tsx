@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { addCard, updateCard, updateCardFront } from '../../db/operations'
+import { addCard, updateCard, updateCardFront, getCardsForDeck, getUniqueTags } from '../../db/operations'
 import { db } from '../../db'
 import type { Difficulty } from '../../types'
 import styles from './CardEdit.module.css'
@@ -13,10 +13,18 @@ export default function CardEdit() {
 
   const [front, setFront] = useState('')
   const [back, setBack] = useState('')
-  const [tag, setTag] = useState('')
+  const [tags, setTags] = useState<string[]>([])
+  const [tagInput, setTagInput] = useState('')
+  const [allDeckTags, setAllDeckTags] = useState<string[]>([])
   const [difficulty, setDifficulty] = useState<Difficulty>(1)
   const [error, setError] = useState('')
   const navigate = useNavigate()
+
+  useEffect(() => {
+    getCardsForDeck(deckName).then((cards) => {
+      setAllDeckTags(getUniqueTags(cards))
+    })
+  }, [deckName])
 
   useEffect(() => {
     if (editingFront) {
@@ -24,12 +32,33 @@ export default function CardEdit() {
         if (card) {
           setFront(card.front)
           setBack(card.back)
-          setTag(card.tag ?? '')
+          setTags(card.tags ?? [])
           setDifficulty(card.difficulty ?? 1)
         }
       })
     }
   }, [deckName, editingFront])
+
+  function addTag(tag: string) {
+    const trimmed = tag.trim()
+    if (trimmed && !tags.includes(trimmed)) {
+      setTags([...tags, trimmed])
+    }
+    setTagInput('')
+  }
+
+  function removeTag(tag: string) {
+    setTags(tags.filter((t) => t !== tag))
+  }
+
+  function handleTagKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault()
+      addTag(tagInput)
+    }
+  }
+
+  const suggestedTags = allDeckTags.filter((t) => !tags.includes(t))
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -45,7 +74,7 @@ export default function CardEdit() {
           setError(`「${trimmedFront}」は既に存在します`)
           return
         }
-        await addCard(deckName, trimmedFront, trimmedBack, tag.trim(), difficulty)
+        await addCard(deckName, trimmedFront, trimmedBack, tags, difficulty)
       } else {
         if (trimmedFront !== editingFront) {
           const existing = await db.cards.get([deckName, trimmedFront])
@@ -55,7 +84,7 @@ export default function CardEdit() {
           }
           await updateCardFront(deckName, editingFront!, trimmedFront)
         }
-        await updateCard(deckName, trimmedFront, { back: trimmedBack, tag: tag.trim(), difficulty })
+        await updateCard(deckName, trimmedFront, { back: trimmedBack, tags, difficulty })
       }
       navigate(`/v1/deck/${encodeURIComponent(deckName)}`)
     } catch {
@@ -91,16 +120,39 @@ export default function CardEdit() {
             className={styles.input}
           />
         </label>
-        <label className={styles.label}>
+        <div className={styles.label}>
           タグ
-          <input
-            type="text"
-            value={tag}
-            onChange={(e) => setTag(e.target.value)}
-            className={styles.input}
-            placeholder="例: 挨拶、買い物、交通"
-          />
-        </label>
+          <div className={styles.tagContainer}>
+            {tags.map((tag) => (
+              <span key={tag} className={styles.tagChip}>
+                {tag}
+                <button type="button" className={styles.tagRemove} onClick={() => removeTag(tag)}>×</button>
+              </span>
+            ))}
+            <input
+              type="text"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={handleTagKeyDown}
+              placeholder="タグを入力（Enter / カンマで追加）"
+              className={styles.tagInput}
+            />
+          </div>
+          {suggestedTags.length > 0 && (
+            <div className={styles.tagSuggestions}>
+              {suggestedTags.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  className={styles.tagSuggestion}
+                  onClick={() => addTag(tag)}
+                >
+                  + {tag}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <div className={styles.label}>
           難易度
           <div className={styles.difficultyGroup}>

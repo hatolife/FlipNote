@@ -1,6 +1,6 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useMemo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { getCardsForDeck, deleteCard, deleteDeck, renameDeck, updateDeckDescription } from '../../db/operations'
+import { getCardsForDeck, deleteCard, deleteDeck, renameDeck, updateDeckDescription, getUniqueTags } from '../../db/operations'
 import { mergeImportCards } from '../../db/import'
 import { generateTsv, parseTsv } from '../../utils/tsv'
 import type { Card } from '../../types'
@@ -18,6 +18,7 @@ export default function DeckDetail() {
   const [description, setDescription] = useState('')
   const [editingDesc, setEditingDesc] = useState(false)
   const [newDescription, setNewDescription] = useState('')
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
 
@@ -38,6 +39,21 @@ export default function DeckDetail() {
   async function loadCards() {
     const result = await getCardsForDeck(deckName)
     setCards(result)
+  }
+
+  const allTags = useMemo(() => getUniqueTags(cards), [cards])
+
+  const filteredCards = useMemo(() => {
+    if (selectedTags.length === 0) return cards
+    return cards.filter((card) =>
+      (card.tags ?? []).some((tag) => selectedTags.includes(tag))
+    )
+  }, [cards, selectedTags])
+
+  function toggleTag(tag: string) {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    )
   }
 
   async function handleDeleteDeck() {
@@ -84,6 +100,14 @@ export default function DeckDetail() {
     if (fileInputRef.current) fileInputRef.current.value = ''
     await loadCards()
   }
+
+  const studyLink = selectedTags.length > 0
+    ? `/v1/deck/${encodeURIComponent(deckName)}/study?tags=${encodeURIComponent(selectedTags.join(','))}`
+    : `/v1/deck/${encodeURIComponent(deckName)}/study`
+
+  const studyButtonText = selectedTags.length > 0
+    ? `${filteredCards.length}枚を学習する`
+    : '学習を始める'
 
   return (
     <div className={styles.container}>
@@ -140,11 +164,37 @@ export default function DeckDetail() {
         </p>
       )}
 
-      <p className={styles.cardCount}>{cards.length}枚のカード</p>
+      <p className={styles.cardCount}>
+        {selectedTags.length > 0
+          ? `${filteredCards.length} / ${cards.length}枚のカード`
+          : `${cards.length}枚のカード`
+        }
+      </p>
+
+      {allTags.length > 0 && (
+        <div className={styles.tagFilter}>
+          <div className={styles.tagFilterChips}>
+            {allTags.map((tag) => (
+              <button
+                key={tag}
+                className={`${styles.tagFilterChip} ${selectedTags.includes(tag) ? styles.tagFilterChipActive : ''}`}
+                onClick={() => toggleTag(tag)}
+              >
+                {tag}
+              </button>
+            ))}
+            {selectedTags.length > 0 && (
+              <button className={styles.tagFilterClear} onClick={() => setSelectedTags([])}>
+                フィルタ解除
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className={styles.actions}>
-        <Link to={`/v1/deck/${encodeURIComponent(deckName)}/study`} className={styles.studyBtn}>
-          学習を始める
+        <Link to={studyLink} className={styles.studyBtn}>
+          {studyButtonText}
         </Link>
         <Link to={`/v1/deck/${encodeURIComponent(deckName)}/card/new`} className={styles.btnPrimary}>
           + カード追加
@@ -182,7 +232,13 @@ export default function DeckDetail() {
                   <span className={styles.cardBack}>{card.back}</span>
                 </div>
                 <div className={styles.cardMeta}>
-                  {card.tag && <span className={styles.cardTag}>{card.tag}</span>}
+                  {(card.tags ?? []).length > 0 && (
+                    <span className={styles.cardTags}>
+                      {card.tags.map((tag) => (
+                        <span key={tag} className={styles.cardTag}>{tag}</span>
+                      ))}
+                    </span>
+                  )}
                   <span className={styles.cardDifficulty}>
                     難易度 {DIFFICULTY_LABELS[card.difficulty ?? 1]}
                   </span>

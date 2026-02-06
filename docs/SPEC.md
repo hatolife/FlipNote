@@ -41,6 +41,7 @@
 | deckName | string | 所属デッキ名（複合キー） |
 | front | string | 表面・問題（複合キー） |
 | back | string | 裏面（答え） |
+| tags | string[] | タグ（任意、デフォルト空配列） |
 | correctCount | number | 「覚えた」累計回数（初期値 0） |
 | incorrectCount | number | 「もう一度」累計回数（初期値 0） |
 | lastStudiedAt | number \| null | 最終学習日時 (Unix ms)。未学習なら null |
@@ -89,15 +90,17 @@
 ### 4.3 デッキ詳細画面 `/v1/deck/:deckName`
 
 - デッキ名・説明の表示と編集
-- カード一覧（表面のプレビュー表示）
+- カード一覧（表面のプレビュー表示、タグバッジ付き）
 - カードの追加・編集・削除
-- 「学習を始める」ボタン
+- タグフィルター（チップ式トグル、OR 論理で絞り込み、フィルタ解除ボタン）
+- 「学習を始める」ボタン（タグ選択時は `?tags=` クエリパラメータ付き、枚数表示）
 - デッキの削除
 - カードのインポート（TSV ファイル読み込み）/ エクスポート（TSV ファイル出力）
 
 ### 4.4 カード編集画面 `/v1/deck/:deckName/card/new` `/v1/deck/:deckName/card/:front/edit`
 
 - 表面・裏面のテキスト入力
+- タグの入力（チップ表示、Enter / カンマで追加、既存タグ候補の表示）
 - 保存 / キャンセル
 
 ### 4.5 学習画面 `/v1/deck/:deckName/study`
@@ -108,6 +111,7 @@
 - 裏面表示後に「覚えた」「もう一度」ボタンを表示
 - 進捗バー（現在 / 全体）
 - 学習順序: シャッフルして出題
+- タグによる絞り込み学習（`?tags=tag1,tag2` クエリパラメータで指定、OR 論理でフィルタ）
 
 ### 4.6 学習結果画面 `/v1/deck/:deckName/result`
 
@@ -136,10 +140,10 @@ TSV（タブ区切り）形式でカードを入出力する。Excel / Google �
 
 **TSV フォーマット**:
 ```
-front	back	correctCount	incorrectCount	lastStudiedAt
-apple	りんご	5	2	2026-02-04T10:30:00
+front	back	correctCount	incorrectCount	lastStudiedAt	tags
+apple	りんご	5	2	2026-02-04T10:30:00	果物,食べ物
 book	本	3	0	2026-02-03T15:00:00
-dog	犬	0	0
+dog	犬	0	0		動物
 ```
 
 | 列 | 必須 | 説明 |
@@ -149,6 +153,7 @@ dog	犬	0	0
 | correctCount | いいえ | 「覚えた」累計回数 |
 | incorrectCount | いいえ | 「もう一度」累計回数 |
 | lastStudiedAt | いいえ | 最終学習日時（ISO 8601 形式、未学習なら空欄） |
+| tags | いいえ | タグ（カンマ区切り、複数指定可能）。`tag` 列名も後方互換で受け付ける |
 
 - 1行目はヘッダ行。インポート時はヘッダ行で列を識別する
 - 各行が1枚のカードに対応

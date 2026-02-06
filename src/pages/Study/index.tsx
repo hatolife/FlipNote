@@ -30,6 +30,8 @@ export default function Study() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const isRetry = searchParams.get('retry') === '1'
+  const tagsParam = searchParams.get('tags')
+  const filterTags = tagsParam ? tagsParam.split(',').filter(Boolean) : []
 
   useEffect(() => {
     getCardsForDeck(deckName).then((allCards) => {
@@ -41,6 +43,10 @@ export default function Study() {
           targetCards = allCards.filter((c) => fronts.includes(c.front))
           sessionStorage.removeItem(`flipnote-retry-${deckName}`)
         }
+      } else if (filterTags.length > 0) {
+        targetCards = allCards.filter((c) =>
+          (c.tags ?? []).some((tag) => filterTags.includes(tag))
+        )
       }
       if (targetCards.length === 0) {
         navigate(`/v1/deck/${encodeURIComponent(deckName)}`)
@@ -60,12 +66,17 @@ export default function Study() {
 
     if (currentIndex + 1 >= cards.length) {
       sessionStorage.setItem(`flipnote-results-${deckName}`, JSON.stringify(newResults))
+      if (filterTags.length > 0) {
+        sessionStorage.setItem(`flipnote-study-tags-${deckName}`, JSON.stringify(filterTags))
+      } else {
+        sessionStorage.removeItem(`flipnote-study-tags-${deckName}`)
+      }
       navigate(`/v1/deck/${encodeURIComponent(deckName)}/result`)
     } else {
       setCurrentIndex(currentIndex + 1)
       setFlipped(false)
     }
-  }, [currentCard, currentIndex, cards.length, deckName, navigate, results])
+  }, [currentCard, currentIndex, cards.length, deckName, navigate, results, filterTags])
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -112,7 +123,7 @@ export default function Study() {
         <div className={styles.cardInner}>
           <div className={styles.cardFront}>
             <div className={styles.cardMetaTop}>
-              {currentCard.tag && <span className={styles.cardTag}>{currentCard.tag}</span>}
+              {(currentCard.tags ?? []).length > 0 && <span className={styles.cardTag}>{currentCard.tags.join(', ')}</span>}
               <span className={styles.cardDifficulty}>難易度 {currentCard.difficulty ?? 1}</span>
             </div>
             <p className={styles.cardText}>{currentCard.front}</p>

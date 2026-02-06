@@ -18,6 +18,11 @@ export default function Result() {
     return stored ? JSON.parse(stored) : []
   }, [deckName])
 
+  const filterTags: string[] = useMemo(() => {
+    const stored = sessionStorage.getItem(`flipnote-study-tags-${deckName}`)
+    return stored ? JSON.parse(stored) : []
+  }, [deckName])
+
   const correctCount = results.filter((r) => r.result === 'correct').length
   const incorrectResults = results.filter((r) => r.result === 'incorrect')
   const total = results.length
@@ -27,6 +32,10 @@ export default function Result() {
     navigate(`/v1/deck/${encodeURIComponent(deckName)}`)
     return null
   }
+
+  const retryLink = filterTags.length > 0
+    ? `/v1/deck/${encodeURIComponent(deckName)}/study?retry=1&tags=${encodeURIComponent(filterTags.join(','))}`
+    : `/v1/deck/${encodeURIComponent(deckName)}/study?retry=1`
 
   return (
     <div className={styles.container} role="main" aria-label="学習結果">
@@ -69,7 +78,7 @@ export default function Result() {
       <div className={styles.actions}>
         {incorrectResults.length > 0 && (
           <Link
-            to={`/v1/deck/${encodeURIComponent(deckName)}/study?retry=1`}
+            to={retryLink}
             className={styles.btnPrimary}
             onClick={() => {
               sessionStorage.setItem(

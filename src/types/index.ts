@@ -11,7 +11,7 @@ export interface Card {
   deckName: string
   front: string
   back: string
-  tag: string
+  tags: string[]
   difficulty: Difficulty
   correctCount: number
   incorrectCount: number

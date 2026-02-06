@@ -37,7 +37,7 @@ describe('DB スキーマ', () => {
       deckName: '英単語',
       front: 'apple',
       back: 'りんご',
-      tag: '果物',
+      tags: ['果物'],
       difficulty: 2,
       correctCount: 0,
       incorrectCount: 0,
@@ -55,7 +55,7 @@ describe('DB スキーマ', () => {
       deckName: '英単語',
       front: 'apple',
       back: 'りんご',
-      tag: '',
+      tags: [],
       difficulty: 1,
       correctCount: 0,
       incorrectCount: 0,
@@ -73,7 +73,7 @@ describe('DB スキーマ', () => {
       deckName: '英単語',
       front: 'apple',
       back: 'りんご',
-      tag: '',
+      tags: [],
       difficulty: 1,
       correctCount: 0,
       incorrectCount: 0,
@@ -85,7 +85,7 @@ describe('DB スキーマ', () => {
       deckName: 'IT用語',
       front: 'apple',
       back: 'テクノロジー企業',
-      tag: '',
+      tags: [],
       difficulty: 1,
       correctCount: 0,
       incorrectCount: 0,
@@ -117,22 +117,29 @@ describe('DB スキーマ', () => {
   it('cards を deckName で絞り込める', async () => {
     const now = Date.now()
     await db.cards.bulkAdd([
-      { deckName: '英単語', front: 'apple', back: 'りんご', tag: '', difficulty: 1, correctCount: 0, incorrectCount: 0, lastStudiedAt: null, createdAt: now, updatedAt: now },
-      { deckName: '英単語', front: 'book', back: '本', tag: '', difficulty: 1, correctCount: 0, incorrectCount: 0, lastStudiedAt: null, createdAt: now, updatedAt: now },
-      { deckName: 'IT用語', front: 'API', back: 'インターフェース', tag: '', difficulty: 1, correctCount: 0, incorrectCount: 0, lastStudiedAt: null, createdAt: now, updatedAt: now },
+      { deckName: '英単語', front: 'apple', back: 'りんご', tags: [], difficulty: 1, correctCount: 0, incorrectCount: 0, lastStudiedAt: null, createdAt: now, updatedAt: now },
+      { deckName: '英単語', front: 'book', back: '本', tags: [], difficulty: 1, correctCount: 0, incorrectCount: 0, lastStudiedAt: null, createdAt: now, updatedAt: now },
+      { deckName: 'IT用語', front: 'API', back: 'インターフェース', tags: [], difficulty: 1, correctCount: 0, incorrectCount: 0, lastStudiedAt: null, createdAt: now, updatedAt: now },
     ])
     const cards = await db.cards.where('deckName').equals('英単語').toArray()
     expect(cards).toHaveLength(2)
   })
 
-  it('cards を tag で絞り込める', async () => {
-    const now = Date.now()
-    await db.cards.bulkAdd([
-      { deckName: '英単語', front: 'apple', back: 'りんご', tag: '果物', difficulty: 1, correctCount: 0, incorrectCount: 0, lastStudiedAt: null, createdAt: now, updatedAt: now },
-      { deckName: '英単語', front: 'book', back: '本', tag: '文房具', difficulty: 1, correctCount: 0, incorrectCount: 0, lastStudiedAt: null, createdAt: now, updatedAt: now },
-      { deckName: '英単語', front: 'banana', back: 'バナナ', tag: '果物', difficulty: 1, correctCount: 0, incorrectCount: 0, lastStudiedAt: null, createdAt: now, updatedAt: now },
-    ])
-    const cards = await db.cards.where('tag').equals('果物').toArray()
-    expect(cards).toHaveLength(2)
+  it('tags 付きカードを保存・取得できる', async () => {
+    const card: Card = {
+      deckName: '英単語',
+      front: 'apple',
+      back: 'りんご',
+      tags: ['果物', '食べ物'],
+      difficulty: 1,
+      correctCount: 0,
+      incorrectCount: 0,
+      lastStudiedAt: null,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    }
+    await db.cards.add(card)
+    const result = await db.cards.get(['英単語', 'apple'])
+    expect(result?.tags).toEqual(['果物', '食べ物'])
   })
 })

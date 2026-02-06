@@ -25,7 +25,7 @@ export async function importCardsToNewDeck(
         deckName,
         front: item.front,
         back: item.back,
-        tag: item.tag,
+        tags: item.tags,
         difficulty: item.difficulty,
         correctCount: item.correctCount,
         incorrectCount: item.incorrectCount,
@@ -57,7 +57,7 @@ export async function mergeImportCards(
       if (existing) {
         await db.cards.update([deckName, item.front], {
           back: item.back,
-          tag: item.tag,
+          tags: item.tags,
           difficulty: item.difficulty,
           correctCount: item.correctCount,
           incorrectCount: item.incorrectCount,
@@ -66,7 +66,7 @@ export async function mergeImportCards(
         })
         updated++
       } else {
-        await addCard(deckName, item.front, item.back, item.tag, item.difficulty)
+        await addCard(deckName, item.front, item.back, item.tags, item.difficulty)
         if (item.correctCount || item.incorrectCount || item.lastStudiedAt) {
           await db.cards.update([deckName, item.front], {
             correctCount: item.correctCount,

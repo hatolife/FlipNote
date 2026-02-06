@@ -95,6 +95,54 @@
   margin: 0 0 0.75rem;
 }
 
+.tagFilter {
+  margin-bottom: 0.75rem;
+}
+
+.tagFilterChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.tagFilterChip {
+  padding: 0.25rem 0.6rem;
+  border: 1px solid #d1d5db;
+  border-radius: 9999px;
+  background: #fff;
+  color: #374151;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.tagFilterChip:hover {
+  background: #f3f4f6;
+}
+
+.tagFilterChipActive {
+  background: #4f46e5;
+  color: #fff;
+  border-color: #4f46e5;
+}
+
+.tagFilterChipActive:hover {
+  background: #4338ca;
+}
+
+.tagFilterClear {
+  padding: 0.25rem 0.6rem;
+  border: none;
+  background: none;
+  color: #ef4444;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.tagFilterClear:hover {
+  text-decoration: underline;
+}
+
 .actions {
   display: flex;
   gap: 0.5rem;
@@ -202,6 +250,13 @@
   gap: 0.5rem;
   align-items: center;
   font-size: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.cardTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
 }
 
 .cardTag {

@@ -1,6 +1,6 @@
 import type { Card, Difficulty } from '../types'
 
-const HEADER = 'front\tback\ttag\tdifficulty\tcorrectCount\tincorrectCount\tlastStudiedAt'
+const HEADER = 'front\tback\ttags\tdifficulty\tcorrectCount\tincorrectCount\tlastStudiedAt'
 
 export function generateTsv(cards: Card[]): string {
   const lines = [HEADER]
@@ -8,7 +8,8 @@ export function generateTsv(cards: Card[]): string {
     const lastStudied = card.lastStudiedAt
       ? new Date(card.lastStudiedAt).toISOString()
       : ''
-    lines.push(`${card.front}\t${card.back}\t${card.tag}\t${card.difficulty}\t${card.correctCount}\t${card.incorrectCount}\t${lastStudied}`)
+    const tags = (card.tags ?? []).join(',')
+    lines.push(`${card.front}\t${card.back}\t${tags}\t${card.difficulty}\t${card.correctCount}\t${card.incorrectCount}\t${lastStudied}`)
   }
   return lines.join('\n')
 }
@@ -22,7 +23,7 @@ function parseDifficulty(value: string): Difficulty {
 export interface ParsedCard {
   front: string
   back: string
-  tag: string
+  tags: string[]
   difficulty: Difficulty
   correctCount: number
   incorrectCount: number
@@ -41,7 +42,8 @@ export function parseTsv(tsv: string): ParsedCard[] {
     const headers = firstLine.split('\t')
     const frontIdx = headers.indexOf('front')
     const backIdx = headers.indexOf('back')
-    const tagIdx = headers.indexOf('tag')
+    let tagsIdx = headers.indexOf('tags')
+    if (tagsIdx < 0) tagsIdx = headers.indexOf('tag')
     const difficultyIdx = headers.indexOf('difficulty')
     const correctIdx = headers.indexOf('correctCount')
     const incorrectIdx = headers.indexOf('incorrectCount')
@@ -49,10 +51,11 @@ export function parseTsv(tsv: string): ParsedCard[] {
 
     return dataLines.map((line) => {
       const cols = line.split('\t')
+      const tagsRaw = tagsIdx >= 0 ? (cols[tagsIdx] ?? '').trim() : ''
       return {
         front: cols[frontIdx] ?? '',
         back: cols[backIdx] ?? '',
-        tag: tagIdx >= 0 ? (cols[tagIdx] ?? '') : '',
+        tags: tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [],
         difficulty: difficultyIdx >= 0 ? parseDifficulty(cols[difficultyIdx] ?? '') : 1,
         correctCount: correctIdx >= 0 ? Number(cols[correctIdx]) || 0 : 0,
         incorrectCount: incorrectIdx >= 0 ? Number(cols[incorrectIdx]) || 0 : 0,
@@ -69,7 +72,7 @@ export function parseTsv(tsv: string): ParsedCard[] {
     return {
       front,
       back,
-      tag: '',
+      tags: [],
       difficulty: 1 as Difficulty,
       correctCount: 0,
       incorrectCount: 0,

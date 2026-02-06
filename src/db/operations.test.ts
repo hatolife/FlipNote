@@ -13,6 +13,7 @@ import {
   updateCard,
   deleteCard,
   updateCardFront,
+  getUniqueTags,
 } from './operations'
 
 describe('デッキ管理', () => {
@@ -121,9 +122,17 @@ describe('カード管理', () => {
     const card = await db.cards.get(['英単語', 'apple'])
     expect(card).toBeDefined()
     expect(card!.back).toBe('りんご')
+    expect(card!.tags).toEqual([])
     expect(card!.correctCount).toBe(0)
     expect(card!.incorrectCount).toBe(0)
     expect(card!.lastStudiedAt).toBeNull()
+  })
+
+  it('カードを tags 付きで追加できる', async () => {
+    await addCard('英単語', 'apple', 'りんご', ['果物', '食べ物'])
+    const card = await db.cards.get(['英単語', 'apple'])
+    expect(card).toBeDefined()
+    expect(card!.tags).toEqual(['果物', '食べ物'])
   })
 
   it('デッキのカード一覧を取得できる', async () => {
@@ -141,6 +150,13 @@ describe('カード管理', () => {
     expect(card!.back).toBe('林檎')
   })
 
+  it('カードの tags を更新できる', async () => {
+    await addCard('英単語', 'apple', 'りんご')
+    await updateCard('英単語', 'apple', { tags: ['果物'] })
+    const card = await db.cards.get(['英単語', 'apple'])
+    expect(card!.tags).toEqual(['果物'])
+  })
+
   it('カードの表面を変更できる', async () => {
     await addCard('英単語', 'apple', 'りんご')
     await updateCardFront('英単語', 'apple', 'Apple')
@@ -154,5 +170,33 @@ describe('カード管理', () => {
     await addCard('英単語', 'apple', 'りんご')
     await deleteCard('英単語', 'apple')
     expect(await db.cards.get(['英単語', 'apple'])).toBeUndefined()
+  })
+})
+
+describe('getUniqueTags', () => {
+  it('カードからユニークなタグを取得できる', () => {
+    const cards = [
+      { deckName: 'd', front: 'a', back: 'b', tags: ['果物', '食べ物'], difficulty: 1 as const, correctCount: 0, incorrectCount: 0, lastStudiedAt: null, createdAt: 0, updatedAt: 0 },
+      { deckName: 'd', front: 'c', back: 'd', tags: ['食べ物', '野菜'], difficulty: 1 as const, correctCount: 0, incorrectCount: 0, lastStudiedAt: null, createdAt: 0, updatedAt: 0 },
+      { deckName: 'd', front: 'e', back: 'f', tags: [], difficulty: 1 as const, correctCount: 0, incorrectCount: 0, lastStudiedAt: null, createdAt: 0, updatedAt: 0 },
+    ]
+    const tags = getUniqueTags(cards)
+    expect(tags).toHaveLength(3)
+    expect(tags).toContain('果物')
+    expect(tags).toContain('食べ物')
+    expect(tags).toContain('野菜')
+  })
+
+  it('空配列なら空配列を返す', () => {
+    expect(getUniqueTags([])).toEqual([])
+  })
+
+  it('tags が未定義のカードも扱える', () => {
+    const cards = [
+      { deckName: 'd', front: 'a', back: 'b', tags: undefined as unknown as string[], difficulty: 1 as const, correctCount: 0, incorrectCount: 0, lastStudiedAt: null, createdAt: 0, updatedAt: 0 },
+      { deckName: 'd', front: 'c', back: 'd', tags: ['タグ1'], difficulty: 1 as const, correctCount: 0, incorrectCount: 0, lastStudiedAt: null, createdAt: 0, updatedAt: 0 },
+    ]
+    const tags = getUniqueTags(cards)
+    expect(tags).toEqual(['タグ1'])
   })
 })
