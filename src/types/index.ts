@@ -5,10 +5,14 @@ export interface Deck {
   updatedAt: number
 }
 
+export type Difficulty = 1 | 2 | 3 | 4 | 5
+
 export interface Card {
   deckName: string
   front: string
   back: string
+  tag: string
+  difficulty: Difficulty
   correctCount: number
   incorrectCount: number
   lastStudiedAt: number | null
