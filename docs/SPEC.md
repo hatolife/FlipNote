@@ -41,7 +41,8 @@
 | deckName | string | 所属デッキ名（複合キー） |
 | front | string | 表面・問題（複合キー） |
 | back | string | 裏面（答え） |
-| tags | string[] | タグ（任意、デフォルト空配列） |
+| tags | string[] | タグ（任意、デフォルト空配列、複数指定可能） |
+| difficulty | Difficulty (1-5) | 難易度（初期値 1） |
 | correctCount | number | 「覚えた」累計回数（初期値 0） |
 | incorrectCount | number | 「もう一度」累計回数（初期値 0） |
 | lastStudiedAt | number \| null | 最終学習日時 (Unix ms)。未学習なら null |
@@ -85,6 +86,7 @@
 - デッキ一覧を表示（カード形式のリスト）
 - 各デッキに名前・カード枚数・最終学習日を表示
 - 「+ 新規デッキ作成」ボタン
+- サンプルデッキの読み込みボタン（日本語-韓国語など）
 - デッキタップでデッキ詳細へ
 
 ### 4.3 デッキ詳細画面 `/v1/deck/:deckName`
@@ -101,11 +103,12 @@
 
 - 表面・裏面のテキスト入力
 - タグの入力（チップ表示、Enter / カンマで追加、既存タグ候補の表示）
+- 難易度の選択（1〜5、ボタン式トグル）
 - 保存 / キャンセル
 
 ### 4.5 学習画面 `/v1/deck/:deckName/study`
 
-- カードを1枚ずつ表示
+- カードを1枚ずつ表示（タグ・難易度をカード上部に表示）
 - タップ / クリックでカードを裏返す（フリップアニメーション）
 - 裏面に Google翻訳リンクを表示（クリックで Google翻訳を開く）
 - 裏面表示後に「覚えた」「もう一度」ボタンを表示
@@ -140,20 +143,21 @@ TSV（タブ区切り）形式でカードを入出力する。Excel / Google �
 
 **TSV フォーマット**:
 ```
-front	back	correctCount	incorrectCount	lastStudiedAt	tags
-apple	りんご	5	2	2026-02-04T10:30:00	果物,食べ物
-book	本	3	0	2026-02-03T15:00:00
-dog	犬	0	0		動物
+front	back	tags	difficulty	correctCount	incorrectCount	lastStudiedAt
+apple	りんご	果物,食べ物	2	5	2	2026-02-04T10:30:00
+book	本		1	3	0	2026-02-03T15:00:00
+dog	犬	動物	3	0	0
 ```
 
 | 列 | 必須 | 説明 |
 |----|------|------|
 | front | はい | 表面（問題） |
 | back | はい | 裏面（答え） |
+| tags | いいえ | タグ（カンマ区切り、複数指定可能）。`tag` 列名も後方互換で受け付ける |
+| difficulty | いいえ | 難易度（1〜5、デフォルト 1） |
 | correctCount | いいえ | 「覚えた」累計回数 |
 | incorrectCount | いいえ | 「もう一度」累計回数 |
 | lastStudiedAt | いいえ | 最終学習日時（ISO 8601 形式、未学習なら空欄） |
-| tags | いいえ | タグ（カンマ区切り、複数指定可能）。`tag` 列名も後方互換で受け付ける |
 
 - 1行目はヘッダ行。インポート時はヘッダ行で列を識別する
 - 各行が1枚のカードに対応
