@@ -20,6 +20,18 @@ interface StudyResult {
   result: 'correct' | 'incorrect'
 }
 
+interface StudyProgress {
+  cardFronts: string[]
+  currentIndex: number
+  results: StudyResult[]
+  filterTags: string[]
+  filterDifficulties: number[]
+  isReverse: boolean
+  savedAt: number
+}
+
+const PROGRESS_KEY = (deckName: string) => `flipnote-progress-${deckName}`
+
 export default function Study() {
   const { deckName: rawDeckName } = useParams<{ deckName: string }>()
   const deckName = decodeURIComponent(rawDeckName ?? '')
@@ -27,6 +39,8 @@ export default function Study() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [flipped, setFlipped] = useState(false)
   const [results, setResults] = useState<StudyResult[]>([])
+  const [showResumePrompt, setShowResumePrompt] = useState(false)
+  const [savedProgress, setSavedProgress] = useState<StudyProgress | null>(null)
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const isRetry = searchParams.get('retry') === '1'
@@ -39,6 +53,26 @@ export default function Study() {
   const isReverse = searchParams.get('reverse') === '1'
 
   useEffect(() => {
+    // 保存された進捗をチェック
+    const progressJson = localStorage.getItem(PROGRESS_KEY(deckName))
+    if (progressJson && !isRetry) {
+      try {
+        const progress: StudyProgress = JSON.parse(progressJson)
+        if (progress.currentIndex < progress.cardFronts.length) {
+          setSavedProgress(progress)
+          setShowResumePrompt(true)
+          return
+        }
+      } catch {
+        // ignore
+      }
+    }
+    startNewSession()
+  }, [deckName, isRetry])
+
+  function startNewSession() {
+    setShowResumePrompt(false)
+    setSavedProgress(null)
     getCardsForDeck(deckName).then((allCards) => {
       let targetCards = allCards
       if (isRetry) {
@@ -64,9 +98,30 @@ export default function Study() {
         navigate(`/v1/deck/${encodeURIComponent(deckName)}`)
         return
       }
+      localStorage.removeItem(PROGRESS_KEY(deckName))
       setCards(shuffle(targetCards))
+      setCurrentIndex(0)
+      setResults([])
     })
-  }, [deckName, navigate, isRetry])
+  }
+
+  function resumeSession() {
+    if (!savedProgress) return
+    setShowResumePrompt(false)
+    getCardsForDeck(deckName).then((allCards) => {
+      const cardMap = new Map(allCards.map((c) => [c.front, c]))
+      const orderedCards = savedProgress.cardFronts
+        .map((front) => cardMap.get(front))
+        .filter((c): c is Card => c !== undefined)
+      if (orderedCards.length === 0) {
+        startNewSession()
+        return
+      }
+      setCards(orderedCards)
+      setCurrentIndex(savedProgress.currentIndex)
+      setResults(savedProgress.results)
+    })
+  }
 
   const currentCard = cards[currentIndex]
 
@@ -77,6 +132,8 @@ export default function Study() {
     setResults(newResults)
 
     if (currentIndex + 1 >= cards.length) {
+      // 学習完了 - 進捗をクリア
+      localStorage.removeItem(PROGRESS_KEY(deckName))
       sessionStorage.setItem(`flipnote-results-${deckName}`, JSON.stringify(newResults))
       if (filterTags.length > 0) {
         sessionStorage.setItem(`flipnote-study-tags-${deckName}`, JSON.stringify(filterTags))
@@ -95,10 +152,22 @@ export default function Study() {
       }
       navigate(`/v1/deck/${encodeURIComponent(deckName)}/result`)
     } else {
-      setCurrentIndex(currentIndex + 1)
+      const nextIndex = currentIndex + 1
+      // 進捗を保存
+      const progress: StudyProgress = {
+        cardFronts: cards.map((c) => c.front),
+        currentIndex: nextIndex,
+        results: newResults,
+        filterTags,
+        filterDifficulties,
+        isReverse,
+        savedAt: Date.now(),
+      }
+      localStorage.setItem(PROGRESS_KEY(deckName), JSON.stringify(progress))
+      setCurrentIndex(nextIndex)
       setFlipped(false)
     }
-  }, [currentCard, currentIndex, cards.length, deckName, navigate, results, filterTags, filterDifficulties])
+  }, [currentCard, currentIndex, cards, deckName, navigate, results, filterTags, filterDifficulties, isReverse])
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -116,6 +185,29 @@ export default function Study() {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [flipped, handleAnswer])
+
+  if (showResumePrompt && savedProgress) {
+    const remaining = savedProgress.cardFronts.length - savedProgress.currentIndex
+    const done = savedProgress.currentIndex
+    return (
+      <div className={styles.container}>
+        <div className={styles.resumePrompt}>
+          <h2 className={styles.resumeTitle}>前回の続きがあります</h2>
+          <p className={styles.resumeInfo}>
+            {savedProgress.cardFronts.length}枚中 {done}枚完了（残り{remaining}枚）
+          </p>
+          <div className={styles.resumeButtons}>
+            <button onClick={resumeSession} className={styles.btnResume}>
+              続きから再開
+            </button>
+            <button onClick={startNewSession} className={styles.btnNewSession}>
+              最初から始める
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (cards.length === 0 || !currentCard) return null
 
