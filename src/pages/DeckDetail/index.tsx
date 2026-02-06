@@ -27,7 +27,29 @@ export default function DeckDetail() {
 
   useEffect(() => {
     loadDeck()
+    // フィルタ設定を復元
+    const savedFilter = localStorage.getItem(`flipnote-filter-${deckName}`)
+    if (savedFilter) {
+      try {
+        const { tags, difficulties, reverse } = JSON.parse(savedFilter)
+        if (Array.isArray(tags)) setSelectedTags(tags)
+        if (Array.isArray(difficulties)) setSelectedDifficulties(difficulties)
+        if (typeof reverse === 'boolean') setReverseMode(reverse)
+      } catch {
+        // ignore
+      }
+    }
   }, [deckName])
+
+  useEffect(() => {
+    // フィルタ設定を保存
+    const filter = {
+      tags: selectedTags,
+      difficulties: selectedDifficulties,
+      reverse: reverseMode,
+    }
+    localStorage.setItem(`flipnote-filter-${deckName}`, JSON.stringify(filter))
+  }, [deckName, selectedTags, selectedDifficulties, reverseMode])
 
   async function loadDeck() {
     const deck = await db.decks.get(deckName)
