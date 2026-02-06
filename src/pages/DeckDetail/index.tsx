@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { getCardsForDeck, deleteCard, deleteDeck, renameDeck, updateDeckDescription, getUniqueTags } from '../../db/operations'
 import { mergeImportCards } from '../../db/import'
 import { generateTsv, parseTsv } from '../../utils/tsv'
+import { isGoogleSheetsUrl, convertGoogleSheetsUrl } from '../../utils/googleSheets'
 import type { Card, Difficulty } from '../../types'
 import { db } from '../../db'
 import styles from './DeckDetail.module.css'
@@ -23,6 +24,10 @@ export default function DeckDetail() {
   const [selectedDifficulties, setSelectedDifficulties] = useState<Difficulty[]>([])
   const [reverseMode, setReverseMode] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [showSpreadsheetForm, setShowSpreadsheetForm] = useState(false)
+  const [spreadsheetUrl, setSpreadsheetUrl] = useState('')
+  const [spreadsheetLoading, setSpreadsheetLoading] = useState(false)
+  const [spreadsheetError, setSpreadsheetError] = useState('')
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -153,6 +158,47 @@ export default function DeckDetail() {
 
     if (fileInputRef.current) fileInputRef.current.value = ''
     await loadCards()
+  }
+
+  async function handleSpreadsheetImport(e: React.FormEvent) {
+    e.preventDefault()
+    if (!spreadsheetUrl.trim()) return
+
+    if (!isGoogleSheetsUrl(spreadsheetUrl)) {
+      setSpreadsheetError('Google スプレッドシートのURLを入力してください')
+      return
+    }
+
+    setSpreadsheetError('')
+    setSpreadsheetLoading(true)
+    try {
+      const exportUrl = convertGoogleSheetsUrl(spreadsheetUrl)
+      const res = await fetch(exportUrl)
+      if (!res.ok) {
+        throw new Error(`取得に失敗しました (${res.status})`)
+      }
+      const text = await res.text()
+      const parsed = parseTsv(text)
+      if (parsed.length === 0) {
+        setSpreadsheetError('スプレッドシートにデータがありません')
+        return
+      }
+
+      const result = await mergeImportCards(deckName, parsed)
+      setSpreadsheetUrl('')
+      setShowSpreadsheetForm(false)
+      setSpreadsheetError('')
+      await loadCards()
+      alert(`追加: ${result.added}枚、更新: ${result.updated}枚`)
+    } catch (err) {
+      setSpreadsheetError(
+        err instanceof Error
+          ? `読み込みに失敗しました: ${err.message}`
+          : '読み込みに失敗しました'
+      )
+    } finally {
+      setSpreadsheetLoading(false)
+    }
   }
 
   const studyLink = useMemo(() => {
@@ -313,7 +359,35 @@ export default function DeckDetail() {
             hidden
           />
         </label>
+        <button
+          onClick={() => { setShowSpreadsheetForm(!showSpreadsheetForm); setSpreadsheetError('') }}
+          className={styles.btnSpreadsheet}
+        >
+          スプレッドシート
+        </button>
       </div>
+
+      {showSpreadsheetForm && (
+        <form onSubmit={handleSpreadsheetImport} className={styles.spreadsheetForm}>
+          <input
+            type="text"
+            value={spreadsheetUrl}
+            onChange={(e) => { setSpreadsheetUrl(e.target.value); setSpreadsheetError('') }}
+            placeholder="Google スプレッドシートのURL"
+            autoFocus
+            className={styles.spreadsheetInput}
+          />
+          {spreadsheetError && <p className={styles.spreadsheetError}>{spreadsheetError}</p>}
+          <div className={styles.formActions}>
+            <button type="submit" className={styles.btnSmall} disabled={spreadsheetLoading}>
+              {spreadsheetLoading ? '読み込み中...' : '読み込み'}
+            </button>
+            <button type="button" onClick={() => { setShowSpreadsheetForm(false); setSpreadsheetError('') }} className={styles.btnSmallSec}>
+              キャンセル
+            </button>
+          </div>
+        </form>
+      )}
 
       {cards.length === 0 ? (
         <p className={styles.empty}>カードがありません。追加またはインポートしてください。</p>

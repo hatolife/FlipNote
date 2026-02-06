@@ -234,6 +234,42 @@
   font-size: 0.9rem;
 }
 
+.btnSpreadsheet {
+  flex: 1;
+  padding: 0.5rem;
+  text-align: center;
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #3b82f6;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.btnSpreadsheet:hover {
+  background: #dbeafe;
+}
+
+.spreadsheetForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.spreadsheetInput {
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.spreadsheetError {
+  color: #ef4444;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
 .empty {
   color: #888;
   text-align: center;
