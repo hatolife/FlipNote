@@ -13,6 +13,17 @@ class FlipNoteDB extends Dexie {
       cards: '[deckName+front], deckName',
       dailyStats: '[deckName+date], deckName',
     })
+
+    this.version(2).stores({
+      decks: 'name',
+      cards: '[deckName+front], deckName, tag',
+      dailyStats: '[deckName+date], deckName',
+    }).upgrade((tx) => {
+      return tx.table('cards').toCollection().modify((card) => {
+        if (card.tag === undefined) card.tag = ''
+        if (card.difficulty === undefined) card.difficulty = 1
+      })
+    })
   }
 }
 

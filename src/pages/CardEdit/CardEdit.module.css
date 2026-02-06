@@ -75,3 +75,39 @@
   font-size: 1rem;
   text-decoration: none;
 }
+
+.difficultyGroup {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.difficultyBtn {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.difficultyBtn:hover {
+  border-color: #4f46e5;
+  color: #4f46e5;
+}
+
+.difficultyActive {
+  background: #4f46e5;
+  border-color: #4f46e5;
+  color: #fff;
+}
+
+.difficultyActive:hover {
+  background: #4338ca;
+  border-color: #4338ca;
+  color: #fff;
+}

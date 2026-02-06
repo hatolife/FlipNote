@@ -1,5 +1,5 @@
 import { db } from './index'
-import type { Card } from '../types'
+import type { Card, Difficulty } from '../types'
 
 // --- デッキ管理 ---
 
@@ -84,12 +84,20 @@ export async function deleteDeck(name: string): Promise<void> {
 
 // --- カード管理 ---
 
-export async function addCard(deckName: string, front: string, back: string): Promise<void> {
+export async function addCard(
+  deckName: string,
+  front: string,
+  back: string,
+  tag = '',
+  difficulty: Difficulty = 1,
+): Promise<void> {
   const now = Date.now()
   await db.cards.add({
     deckName,
     front,
     back,
+    tag,
+    difficulty,
     correctCount: 0,
     incorrectCount: 0,
     lastStudiedAt: null,
@@ -105,7 +113,7 @@ export async function getCardsForDeck(deckName: string): Promise<Card[]> {
 export async function updateCard(
   deckName: string,
   front: string,
-  updates: Partial<Pick<Card, 'back' | 'correctCount' | 'incorrectCount' | 'lastStudiedAt'>>,
+  updates: Partial<Pick<Card, 'back' | 'tag' | 'difficulty' | 'correctCount' | 'incorrectCount' | 'lastStudiedAt'>>,
 ): Promise<void> {
   await db.cards.update([deckName, front], { ...updates, updatedAt: Date.now() })
 }

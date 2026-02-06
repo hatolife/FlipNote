@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { addCard, updateCard, updateCardFront } from '../../db/operations'
 import { db } from '../../db'
+import type { Difficulty } from '../../types'
 import styles from './CardEdit.module.css'
 
 export default function CardEdit() {
@@ -12,6 +13,8 @@ export default function CardEdit() {
 
   const [front, setFront] = useState('')
   const [back, setBack] = useState('')
+  const [tag, setTag] = useState('')
+  const [difficulty, setDifficulty] = useState<Difficulty>(1)
   const [error, setError] = useState('')
   const navigate = useNavigate()
 
@@ -21,6 +24,8 @@ export default function CardEdit() {
         if (card) {
           setFront(card.front)
           setBack(card.back)
+          setTag(card.tag ?? '')
+          setDifficulty(card.difficulty ?? 1)
         }
       })
     }
@@ -40,7 +45,7 @@ export default function CardEdit() {
           setError(`「${trimmedFront}」は既に存在します`)
           return
         }
-        await addCard(deckName, trimmedFront, trimmedBack)
+        await addCard(deckName, trimmedFront, trimmedBack, tag.trim(), difficulty)
       } else {
         if (trimmedFront !== editingFront) {
           const existing = await db.cards.get([deckName, trimmedFront])
@@ -50,7 +55,7 @@ export default function CardEdit() {
           }
           await updateCardFront(deckName, editingFront!, trimmedFront)
         }
-        await updateCard(deckName, trimmedFront, { back: trimmedBack })
+        await updateCard(deckName, trimmedFront, { back: trimmedBack, tag: tag.trim(), difficulty })
       }
       navigate(`/v1/deck/${encodeURIComponent(deckName)}`)
     } catch {
@@ -86,6 +91,32 @@ export default function CardEdit() {
             className={styles.input}
           />
         </label>
+        <label className={styles.label}>
+          タグ
+          <input
+            type="text"
+            value={tag}
+            onChange={(e) => setTag(e.target.value)}
+            className={styles.input}
+            placeholder="例: 挨拶、買い物、交通"
+          />
+        </label>
+        <div className={styles.label}>
+          難易度
+          <div className={styles.difficultyGroup}>
+            {([1, 2, 3, 4, 5] as Difficulty[]).map((level) => (
+              <button
+                key={level}
+                type="button"
+                className={`${styles.difficultyBtn} ${difficulty === level ? styles.difficultyActive : ''}`}
+                onClick={() => setDifficulty(level)}
+                aria-label={`難易度 ${level}`}
+              >
+                {level}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className={styles.actions}>
           <button type="submit" className={styles.btnPrimary}>保存</button>
           <Link to={`/v1/deck/${encodeURIComponent(deckName)}`} className={styles.btnSecondary}>

@@ -111,6 +111,10 @@ export default function Study() {
       >
         <div className={styles.cardInner}>
           <div className={styles.cardFront}>
+            <div className={styles.cardMetaTop}>
+              {currentCard.tag && <span className={styles.cardTag}>{currentCard.tag}</span>}
+              <span className={styles.cardDifficulty}>難易度 {currentCard.difficulty ?? 1}</span>
+            </div>
             <p className={styles.cardText}>{currentCard.front}</p>
             {!flipped && <p className={styles.tapHint}>タップ / スペースキーで裏返す</p>}
           </div>

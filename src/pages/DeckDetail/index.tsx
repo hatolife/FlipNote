@@ -6,6 +6,8 @@ import type { Card } from '../../types'
 import { db } from '../../db'
 import styles from './DeckDetail.module.css'
 
+const DIFFICULTY_LABELS = ['', '1', '2', '3', '4', '5']
+
 export default function DeckDetail() {
   const { deckName: rawDeckName } = useParams<{ deckName: string }>()
   const deckName = decodeURIComponent(rawDeckName ?? '')
@@ -84,13 +86,15 @@ export default function DeckDetail() {
         if (existing) {
           await db.cards.update([deckName, item.front], {
             back: item.back,
+            tag: item.tag,
+            difficulty: item.difficulty,
             correctCount: item.correctCount,
             incorrectCount: item.incorrectCount,
             lastStudiedAt: item.lastStudiedAt,
             updatedAt: now,
           })
         } else {
-          await addCard(deckName, item.front, item.back)
+          await addCard(deckName, item.front, item.back, item.tag, item.difficulty)
           if (item.correctCount || item.incorrectCount || item.lastStudiedAt) {
             await db.cards.update([deckName, item.front], {
               correctCount: item.correctCount,
@@ -198,8 +202,16 @@ export default function DeckDetail() {
                 to={`/v1/deck/${encodeURIComponent(deckName)}/card/${encodeURIComponent(card.front)}/edit`}
                 className={styles.cardContent}
               >
-                <span className={styles.cardFront}>{card.front}</span>
-                <span className={styles.cardBack}>{card.back}</span>
+                <div className={styles.cardMain}>
+                  <span className={styles.cardFront}>{card.front}</span>
+                  <span className={styles.cardBack}>{card.back}</span>
+                </div>
+                <div className={styles.cardMeta}>
+                  {card.tag && <span className={styles.cardTag}>{card.tag}</span>}
+                  <span className={styles.cardDifficulty}>
+                    難易度 {DIFFICULTY_LABELS[card.difficulty ?? 1]}
+                  </span>
+                </div>
               </Link>
               <button
                 onClick={() => handleDeleteCard(card.front)}
