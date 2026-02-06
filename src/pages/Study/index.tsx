@@ -175,19 +175,22 @@ export default function Study() {
             onClick={() => setFlipped(false)}
             className={styles.btnFlip}
           >
-            問題を見る
+            <span>問題を見る</span>
+            <span className={styles.keyHint}>スペース</span>
           </button>
           <button
             onClick={() => handleAnswer('incorrect')}
             className={styles.btnIncorrect}
           >
-            不正解 (← / 1)
+            <span>不正解</span>
+            <span className={styles.keyHint}>← / 1</span>
           </button>
           <button
             onClick={() => handleAnswer('correct')}
             className={styles.btnCorrect}
           >
-            正解 (→ / 2)
+            <span>正解</span>
+            <span className={styles.keyHint}>→ / 2</span>
           </button>
         </div>
       )}
